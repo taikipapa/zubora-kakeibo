@@ -1,6 +1,6 @@
 import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AmountInput } from '../components/transaction/AmountInput';
 import { TransactionListItem } from '../components/history/TransactionListItem';
@@ -11,6 +11,7 @@ import { initDatabase } from '../db/client';
 import { getRecentTransactionsByWalletId } from '../domain/transaction/transactionRepository';
 import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
+import { deleteWallet } from '../domain/wallet/walletService';
 import type { Transaction, TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
@@ -96,6 +97,38 @@ export default function HomeScreen() {
     await loadTransactionsFor(updated, newIndex);
   }
 
+  function handleDeleteWallet() {
+    if (!wallet) return;
+    if (wallets.length <= 1) {
+      Alert.alert('削除できません', '最後の財布は削除できません');
+      return;
+    }
+    Alert.alert(
+      `「${wallet.name}」を削除しますか？`,
+      'この財布の入出金履歴もすべて削除されます。',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '削除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteWallet(wallet.id);
+              const updated = await getAllWallets();
+              const newIndex = Math.max(0, currentIndex - 1);
+              setWallets(updated);
+              setCurrentIndex(newIndex);
+              currentIndexRef.current = newIndex;
+              await loadTransactionsFor(updated, newIndex);
+            } catch (err) {
+              Alert.alert('エラー', err instanceof Error ? err.message : '削除に失敗しました');
+            }
+          },
+        },
+      ],
+    );
+  }
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -163,6 +196,11 @@ export default function HomeScreen() {
 
         {/* Wallet card */}
         <WalletCard name={wallet.name} balance={wallet.balance} type={wallet.type} />
+
+        {/* Delete wallet button */}
+        <Pressable style={styles.deleteWalletButton} onPress={handleDeleteWallet}>
+          <Text style={styles.deleteWalletText}>この財布を削除</Text>
+        </Pressable>
 
         {/* 入れる / 出す toggle */}
         <TransactionTypeToggle value={transactionType} onChange={setTransactionType} />
@@ -325,6 +363,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
     letterSpacing: 2,
+  },
+  deleteWalletButton: {
+    alignSelf: 'center',
+    marginTop: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  deleteWalletText: {
+    fontSize: 12,
+    color: '#E53935',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   historySection: {
     marginTop: 28,
