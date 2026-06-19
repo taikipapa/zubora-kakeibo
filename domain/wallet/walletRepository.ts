@@ -29,6 +29,11 @@ export async function deleteWallet(id: string): Promise<void> {
   await db.runAsync('DELETE FROM wallets WHERE id = ?', [id]);
 }
 
+export async function deleteAllWallets(): Promise<void> {
+  const db = getDatabase();
+  await db.runAsync('DELETE FROM wallets');
+}
+
 export async function countWallets(): Promise<number> {
   const db = getDatabase();
   const result = await db.getFirstAsync<{ count: number }>(

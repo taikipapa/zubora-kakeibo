@@ -55,6 +55,11 @@ export function getRecentTransactionsByWalletId(
   );
 }
 
+export async function deleteAllTransactions(): Promise<void> {
+  const db = getDatabase();
+  await db.runAsync('DELETE FROM transactions');
+}
+
 export async function deleteTransactionsByWalletId(walletId: string): Promise<void> {
   const db = getDatabase();
   await db.runAsync('DELETE FROM transactions WHERE walletId = ?', [walletId]);

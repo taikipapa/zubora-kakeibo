@@ -1,9 +1,11 @@
 import { getDatabase } from '../../db/client';
+import { seedInitialWallet } from '../../db/seed';
 import type { Wallet, WalletType } from '../../types/wallet';
-import { deleteTransactionsByWalletId } from '../transaction/transactionRepository';
+import { deleteAllTransactions, deleteTransactionsByWalletId } from '../transaction/transactionRepository';
 import {
   countWallets,
   createWallet as createWalletRecord,
+  deleteAllWallets,
   deleteWallet as deleteWalletRecord,
 } from './walletRepository';
 
@@ -27,6 +29,15 @@ export async function createWallet(name: string, type: WalletType): Promise<Wall
   };
   await createWalletRecord(wallet);
   return wallet;
+}
+
+export async function resetAllData(): Promise<void> {
+  const db = getDatabase();
+  await db.withTransactionAsync(async () => {
+    await deleteAllTransactions();
+    await deleteAllWallets();
+  });
+  await seedInitialWallet(db);
 }
 
 export async function deleteWallet(id: string): Promise<void> {

@@ -1,8 +1,32 @@
 import { Stack } from 'expo-router';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { resetAllData } from '../domain/wallet/walletService';
+
 function stub(label: string) {
   Alert.alert(label, 'この機能はまだ実装されていません');
+}
+
+function handleReset() {
+  Alert.alert(
+    '全データをリセット',
+    'すべての財布と履歴を削除して初期状態に戻します。よろしいですか？',
+    [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: 'リセット',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await resetAllData();
+            Alert.alert('リセットしました', '初期財布「ズボラ財布」が再作成されました');
+          } catch (err) {
+            Alert.alert('エラー', err instanceof Error ? err.message : 'リセットに失敗しました');
+          }
+        },
+      },
+    ],
+  );
 }
 
 function SettingsRow({
@@ -55,7 +79,7 @@ export default function SettingsScreen() {
           <SettingsRow
             label="全データをリセット"
             description="財布・履歴をすべて削除して初期状態に戻す"
-            onPress={() => stub('全データリセット')}
+            onPress={handleReset}
             destructive
           />
         </View>
