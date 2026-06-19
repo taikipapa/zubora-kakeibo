@@ -4,26 +4,37 @@ import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Tex
 
 import { AmountInput } from '../components/transaction/AmountInput';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
+import { TransactionListItem } from '../components/history/TransactionListItem';
 import { WalletCard } from '../components/wallet/WalletCard';
 import { initDatabase } from '../db/client';
+import { getAllTransactions } from '../domain/transaction/transactionRepository';
 import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
-import type { TransactionType } from '../types/transaction';
+import type { Transaction, TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
 export default function HomeScreen() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<TransactionType>('income');
   const [amount, setAmount] = useState('');
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  async function loadData() {
+    const [updatedWallets, allTransactions] = await Promise.all([
+      getAllWallets(),
+      getAllTransactions(),
+    ]);
+    setWallets(updatedWallets);
+    setRecentTransactions(allTransactions.slice(0, 5));
+  }
+
   useEffect(() => {
     initDatabase()
-      .then(() => getAllWallets())
-      .then(setWallets)
-      .catch((err) => console.error('Failed to load wallets', err))
+      .then(loadData)
+      .catch((err) => console.error('Failed to load data', err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -40,8 +51,7 @@ export default function HomeScreen() {
     setErrorMessage(null);
     try {
       await addTransaction(wallet.id, transactionType, parsed);
-      const updated = await getAllWallets();
-      setWallets(updated);
+      await loadData();
       setAmount('');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '保存に失敗しました');
@@ -119,9 +129,15 @@ export default function HomeScreen() {
         {/* Recent history area */}
         <View style={styles.historySection}>
           <Text style={styles.historyTitle}>最近の履歴</Text>
-          <View style={styles.historyEmpty}>
-            <Text style={styles.historyEmptyText}>まだ履歴がありません</Text>
-          </View>
+          {recentTransactions.length === 0 ? (
+            <View style={styles.historyEmpty}>
+              <Text style={styles.historyEmptyText}>まだ履歴がありません</Text>
+            </View>
+          ) : (
+            recentTransactions.map((t) => (
+              <TransactionListItem key={t.id} transaction={t} />
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
