@@ -1,4 +1,4 @@
-import { Stack, useFocusEffect } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -16,6 +16,7 @@ import type { Transaction, TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
@@ -189,9 +190,14 @@ export default function HomeScreen() {
               <Text style={[styles.navButtonText, isLast && styles.navButtonTextDisabled]}>▶</Text>
             </Pressable>
           </View>
-          <Pressable style={styles.addWalletButton} onPress={() => setShowAddModal(true)}>
-            <Text style={styles.addWalletText}>＋ 財布を追加</Text>
-          </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable style={styles.addWalletButton} onPress={() => setShowAddModal(true)}>
+              <Text style={styles.addWalletText}>＋ 財布を追加</Text>
+            </Pressable>
+            <Pressable style={styles.settingsButton} onPress={() => router.push('/settings')}>
+              <Text style={styles.settingsButtonText}>⚙</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Wallet card */}
@@ -332,6 +338,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  settingsButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsButtonText: {
+    fontSize: 18,
+    color: '#5D3A00',
   },
   errorText: {
     marginHorizontal: 24,
