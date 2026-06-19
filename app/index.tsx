@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Tex
 import { AmountInput } from '../components/transaction/AmountInput';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
 import { TransactionListItem } from '../components/history/TransactionListItem';
+import { AddWalletModal } from '../components/wallet/AddWalletModal';
 import { WalletCard } from '../components/wallet/WalletCard';
 import { initDatabase } from '../db/client';
 import { getAllTransactions } from '../domain/transaction/transactionRepository';
@@ -21,6 +22,7 @@ export default function HomeScreen() {
   const [amount, setAmount] = useState('');
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const loadData = useCallback(async () => {
     const [updatedWallets, allTransactions] = await Promise.all([
@@ -90,6 +92,11 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
+      <AddWalletModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onCreated={() => { setShowAddModal(false); loadData(); }}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -102,7 +109,7 @@ export default function HomeScreen() {
               1 / {wallets.length}
             </Text>
           </View>
-          <Pressable style={styles.addWalletButton}>
+          <Pressable style={styles.addWalletButton} onPress={() => setShowAddModal(true)}>
             <Text style={styles.addWalletText}>＋ 財布を追加</Text>
           </Pressable>
         </View>
