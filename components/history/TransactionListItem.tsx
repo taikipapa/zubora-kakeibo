@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Transaction } from '../../types/transaction';
 
 interface Props {
   transaction: Transaction;
+  onDelete?: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -15,7 +16,7 @@ function formatDate(iso: string): string {
   return `${month}月${day}日 ${hours}:${mins}`;
 }
 
-export function TransactionListItem({ transaction }: Props) {
+export function TransactionListItem({ transaction, onDelete }: Props) {
   const isIncome = transaction.type === 'income';
   return (
     <View style={styles.row}>
@@ -32,6 +33,11 @@ export function TransactionListItem({ transaction }: Props) {
           {transaction.amount.toLocaleString()}円
         </Text>
       </View>
+      {onDelete && (
+        <Pressable style={styles.deleteButton} onPress={onDelete} hitSlop={8}>
+          <Text style={styles.deleteText}>✕</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -39,7 +45,6 @@ export function TransactionListItem({ transaction }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
@@ -61,6 +66,7 @@ const styles = StyleSheet.create({
   right: {
     alignItems: 'flex-end',
     gap: 2,
+    marginRight: 12,
   },
   typeLabel: {
     fontSize: 11,
@@ -81,5 +87,18 @@ const styles = StyleSheet.create({
   },
   expenseAmount: {
     color: '#C62828',
+  },
+  deleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(229,57,53,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteText: {
+    fontSize: 12,
+    color: '#E53935',
+    fontWeight: '700',
   },
 });

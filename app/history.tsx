@@ -1,23 +1,50 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { TransactionListItem } from '../components/history/TransactionListItem';
 import { initDatabase } from '../db/client';
 import { getAllTransactions } from '../domain/transaction/transactionRepository';
+import { removeTransaction } from '../domain/transaction/transactionService';
 import type { Transaction } from '../types/transaction';
 
 export default function HistoryScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
+  async function loadTransactions() {
+    const data = await getAllTransactions();
+    setTransactions(data);
+  }
+
   useEffect(() => {
     initDatabase()
-      .then(() => getAllTransactions())
-      .then(setTransactions)
+      .then(loadTransactions)
       .catch((err) => console.error('Failed to load transactions', err))
       .finally(() => setLoading(false));
   }, []);
+
+  function handleDelete(id: string) {
+    Alert.alert(
+      'この履歴を削除しますか？',
+      '削除すると残高も元に戻ります。',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '削除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeTransaction(id);
+              await loadTransactions();
+            } catch (err) {
+              Alert.alert('エラー', err instanceof Error ? err.message : '削除に失敗しました');
+            }
+          },
+        },
+      ],
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -30,7 +57,9 @@ export default function HistoryScreen() {
         <FlatList
           data={transactions}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <TransactionListItem transaction={item} />}
+          renderItem={({ item }) => (
+            <TransactionListItem transaction={item} onDelete={() => handleDelete(item.id)} />
+          )}
           contentContainerStyle={transactions.length === 0 ? styles.emptyContainer : styles.listContent}
           ListEmptyComponent={
             <View style={styles.centered}>
