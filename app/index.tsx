@@ -16,6 +16,8 @@ import { deleteWallet } from '../domain/wallet/walletService';
 import type { Transaction, TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
+const MAX_WALLETS = 5;
+
 // Stub for rewarded ad — replace with real AdMob implementation when ready.
 // Returns true if the user completed watching the ad, false otherwise.
 async function showRewardedAd(): Promise<boolean> {
@@ -108,6 +110,10 @@ export default function HomeScreen() {
   }
 
   function handleAddWalletPress() {
+    if (wallets.length >= MAX_WALLETS) {
+      Alert.alert('上限に達しています', `財布は${MAX_WALLETS}個までです`);
+      return;
+    }
     Alert.alert(
       '財布を追加',
       '財布を追加するには広告を見る必要があります。',
@@ -183,6 +189,7 @@ export default function HomeScreen() {
 
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === wallets.length - 1;
+  const isAtLimit = wallets.length >= MAX_WALLETS;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -219,7 +226,10 @@ export default function HomeScreen() {
             </Pressable>
           </View>
           <View style={styles.headerRight}>
-            <Pressable style={[styles.addWalletButton, { backgroundColor: theme.primary }]} onPress={handleAddWalletPress}>
+            <Pressable
+              style={[styles.addWalletButton, { backgroundColor: theme.primary }, isAtLimit && styles.addWalletButtonDisabled]}
+              onPress={handleAddWalletPress}
+            >
               <Text style={styles.addWalletText}>＋ 財布を追加</Text>
             </Pressable>
             <Pressable style={styles.settingsButton} onPress={() => router.push('/settings')}>
@@ -366,6 +376,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
+  },
+  addWalletButtonDisabled: {
+    opacity: 0.4,
   },
   headerRight: {
     flexDirection: 'row',
