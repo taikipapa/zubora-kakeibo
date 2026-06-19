@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useTheme } from '../../theme/ThemeContext';
 import type { WalletType } from '../../types/wallet';
 
 interface Props {
@@ -9,11 +10,12 @@ interface Props {
 }
 
 export function WalletCard({ name, balance }: Props) {
+  const { theme } = useTheme();
   return (
     <View style={styles.container}>
       <Text style={styles.illustration}>👛</Text>
       <Text style={styles.name}>{name}</Text>
-      <View style={styles.balanceBanner}>
+      <View style={[styles.balanceBanner, { backgroundColor: theme.balanceBanner }]}>
         <Text style={styles.balanceLabel}>残高</Text>
         <Text style={styles.balanceAmount}>{balance.toLocaleString()}円</Text>
       </View>

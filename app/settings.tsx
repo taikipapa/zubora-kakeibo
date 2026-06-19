@@ -2,6 +2,8 @@ import { Stack } from 'expo-router';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { resetAllData } from '../domain/wallet/walletService';
+import { useTheme } from '../theme/ThemeContext';
+import type { ThemeId } from '../types/settings';
 
 function stub(label: string) {
   Alert.alert(label, 'この機能はまだ実装されていません');
@@ -52,12 +54,27 @@ function SettingsRow({
 }
 
 export default function SettingsScreen() {
+  const { theme, themeId, setThemeId } = useTheme();
+
+  function handleThemeToggle() {
+    const LABELS: Record<ThemeId, string> = { waiwai: 'わいわい', hokkori: 'ほっこり' };
+    Alert.alert(
+      'テーマを選択',
+      `現在: ${LABELS[themeId]}`,
+      [
+        { text: 'わいわい（元気・黄色）', onPress: () => setThemeId('waiwai') },
+        { text: 'ほっこり（やさしい・クリーム）', onPress: () => setThemeId('hokkori') },
+        { text: 'キャンセル', style: 'cancel' },
+      ],
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
           title: '設定',
-          headerStyle: styles.header,
+          headerStyle: { backgroundColor: theme.background },
           headerTintColor: '#3E2700',
           headerTitleStyle: styles.headerTitle,
         }}
@@ -68,8 +85,8 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <SettingsRow
             label="テーマ切り替え"
-            description="わいわい / ほっこり"
-            onPress={() => stub('テーマ切り替え')}
+            description={`現在: ${themeId === 'waiwai' ? 'わいわい' : 'ほっこり'}`}
+            onPress={handleThemeToggle}
           />
         </View>
 

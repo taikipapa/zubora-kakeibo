@@ -1,1 +1,1 @@
-// TODO: useTheme フック
+export { useTheme } from './ThemeContext';

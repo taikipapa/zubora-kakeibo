@@ -8,6 +8,7 @@ import { TransactionTypeToggle } from '../components/transaction/TransactionType
 import { AddWalletModal } from '../components/wallet/AddWalletModal';
 import { WalletCard } from '../components/wallet/WalletCard';
 import { initDatabase } from '../db/client';
+import { useTheme } from '../theme/ThemeContext';
 import { getRecentTransactionsByWalletId } from '../domain/transaction/transactionRepository';
 import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
@@ -17,6 +18,7 @@ import type { Wallet } from '../types/wallet';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
@@ -132,10 +134,10 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#FF8F00" />
+          <ActivityIndicator size="large" color={theme.primary} />
           <Text style={styles.loadingText}>財布を準備中...</Text>
         </View>
       </SafeAreaView>
@@ -144,7 +146,7 @@ export default function HomeScreen() {
 
   if (!wallet) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.centered}>
           <Text style={styles.loadingText}>財布を準備中...</Text>
@@ -157,7 +159,7 @@ export default function HomeScreen() {
   const isLast = currentIndex === wallets.length - 1;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <AddWalletModal
         visible={showAddModal}
@@ -173,17 +175,17 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.navGroup}>
             <Pressable
-              style={[styles.navButton, isFirst && styles.navButtonDisabled]}
+              style={[styles.navButton, { backgroundColor: theme.primary }, isFirst && styles.navButtonDisabled]}
               onPress={() => navigate(currentIndex - 1)}
               disabled={isFirst}
             >
               <Text style={[styles.navButtonText, isFirst && styles.navButtonTextDisabled]}>◀</Text>
             </Pressable>
-            <View style={styles.pageBadge}>
+            <View style={[styles.pageBadge, { backgroundColor: theme.primary }]}>
               <Text style={styles.pageText}>{currentIndex + 1} / {wallets.length}</Text>
             </View>
             <Pressable
-              style={[styles.navButton, isLast && styles.navButtonDisabled]}
+              style={[styles.navButton, { backgroundColor: theme.primary }, isLast && styles.navButtonDisabled]}
               onPress={() => navigate(currentIndex + 1)}
               disabled={isLast}
             >
@@ -191,7 +193,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
           <View style={styles.headerRight}>
-            <Pressable style={styles.addWalletButton} onPress={() => setShowAddModal(true)}>
+            <Pressable style={[styles.addWalletButton, { backgroundColor: theme.primary }]} onPress={() => setShowAddModal(true)}>
               <Text style={styles.addWalletText}>＋ 財布を追加</Text>
             </Pressable>
             <Pressable style={styles.settingsButton} onPress={() => router.push('/settings')}>
@@ -221,7 +223,7 @@ export default function HomeScreen() {
 
         {/* Save button */}
         <Pressable
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          style={[styles.saveButton, { backgroundColor: theme.saveButton }, saving && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={saving}
         >

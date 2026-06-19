@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 
 import { initDatabase } from '../db/client';
+import { ThemeProvider } from '../theme/ThemeContext';
 
 export default function RootLayout() {
   useEffect(() => {
@@ -10,5 +11,9 @@ export default function RootLayout() {
     });
   }, []);
 
-  return <Stack />;
+  return (
+    <ThemeProvider>
+      <Stack />
+    </ThemeProvider>
+  );
 }
