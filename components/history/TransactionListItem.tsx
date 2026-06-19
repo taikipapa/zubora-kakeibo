@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useTheme } from '../../theme/ThemeContext';
 import type { Transaction } from '../../types/transaction';
 
 interface Props {
@@ -17,7 +18,9 @@ function formatDate(iso: string): string {
 }
 
 export function TransactionListItem({ transaction, onDelete }: Props) {
+  const { theme } = useTheme();
   const isIncome = transaction.type === 'income';
+  const accentColor = isIncome ? theme.incomeColor : theme.expenseColor;
   return (
     <View style={styles.row}>
       <View style={styles.left}>
@@ -25,10 +28,10 @@ export function TransactionListItem({ transaction, onDelete }: Props) {
         <Text style={styles.date}>{formatDate(transaction.createdAt)}</Text>
       </View>
       <View style={styles.right}>
-        <Text style={[styles.typeLabel, isIncome ? styles.incomeLabel : styles.expenseLabel]}>
+        <Text style={[styles.typeLabel, { color: accentColor }]}>
           {isIncome ? '入った' : '出た'}
         </Text>
-        <Text style={[styles.amount, isIncome ? styles.incomeAmount : styles.expenseAmount]}>
+        <Text style={[styles.amount, { color: accentColor }]}>
           {isIncome ? '+' : '-'}
           {transaction.amount.toLocaleString()}円
         </Text>

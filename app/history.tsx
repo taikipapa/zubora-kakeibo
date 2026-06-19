@@ -7,10 +7,12 @@ import { initDatabase } from '../db/client';
 import { getTransactionsByWalletId } from '../domain/transaction/transactionRepository';
 import { removeTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
+import { useTheme } from '../theme/ThemeContext';
 import type { Transaction } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
 export default function HistoryScreen() {
+  const { theme } = useTheme();
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
@@ -77,25 +79,25 @@ export default function HistoryScreen() {
   const isLast = wallets.length === 0 || currentIndex === wallets.length - 1;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <Stack.Screen options={{ title: '履歴', headerStyle: styles.header, headerTintColor: '#3E2700', headerTitleStyle: styles.headerTitle }} />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+      <Stack.Screen options={{ title: '履歴', headerStyle: { backgroundColor: theme.background }, headerTintColor: '#3E2700', headerTitleStyle: styles.headerTitle }} />
 
       {/* Wallet selector */}
       {wallets.length > 0 && (
         <View style={styles.walletNav}>
           <Pressable
-            style={[styles.navButton, isFirst && styles.navButtonDisabled]}
+            style={[styles.navButton, { backgroundColor: theme.primary }, isFirst && styles.navButtonDisabled]}
             onPress={() => navigate(currentIndex - 1)}
             disabled={isFirst}
           >
             <Text style={[styles.navButtonText, isFirst && styles.navButtonTextDisabled]}>◀</Text>
           </Pressable>
           <View style={styles.walletInfo}>
-            <Text style={styles.walletName} numberOfLines={1}>{wallet?.name ?? ''}</Text>
-            <Text style={styles.pageIndicator}>{currentIndex + 1} / {wallets.length}</Text>
+            <Text style={[styles.walletName, { color: theme.textDark }]} numberOfLines={1}>{wallet?.name ?? ''}</Text>
+            <Text style={[styles.pageIndicator, { color: theme.textMid }]}>{currentIndex + 1} / {wallets.length}</Text>
           </View>
           <Pressable
-            style={[styles.navButton, isLast && styles.navButtonDisabled]}
+            style={[styles.navButton, { backgroundColor: theme.primary }, isLast && styles.navButtonDisabled]}
             onPress={() => navigate(currentIndex + 1)}
             disabled={isLast}
           >
@@ -106,7 +108,7 @@ export default function HistoryScreen() {
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#FF8F00" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       ) : (
         <FlatList
@@ -115,10 +117,10 @@ export default function HistoryScreen() {
           renderItem={({ item }) => (
             <TransactionListItem transaction={item} onDelete={() => handleDelete(item.id)} />
           )}
-          contentContainerStyle={transactions.length === 0 ? styles.emptyContainer : styles.listContent}
+          contentContainerStyle={transactions.length === 0 ? styles.emptyContainer : [styles.listContent, { backgroundColor: theme.card }]}
           ListEmptyComponent={
             <View style={styles.centered}>
-              <Text style={styles.emptyText}>まだ履歴がありません</Text>
+              <Text style={[styles.emptyText, { color: theme.textMid }]}>まだ履歴がありません</Text>
             </View>
           }
           ItemSeparatorComponent={() => null}
