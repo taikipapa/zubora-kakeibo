@@ -6,6 +6,7 @@ import { AmountInput } from '../components/transaction/AmountInput';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
 import { WalletCard } from '../components/wallet/WalletCard';
 import { initDatabase } from '../db/client';
+import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
 import type { TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
@@ -15,6 +16,8 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<TransactionType>('income');
   const [amount, setAmount] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     initDatabase()
@@ -25,6 +28,27 @@ export default function HomeScreen() {
   }, []);
 
   const wallet = wallets[0] ?? null;
+
+  async function handleSave() {
+    if (!wallet) return;
+    const parsed = parseInt(amount, 10);
+    if (!amount.trim() || isNaN(parsed) || parsed <= 0) {
+      setErrorMessage('金額を正しく入力してください');
+      return;
+    }
+    setSaving(true);
+    setErrorMessage(null);
+    try {
+      await addTransaction(wallet.id, transactionType, parsed);
+      const updated = await getAllWallets();
+      setWallets(updated);
+      setAmount('');
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : '保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -76,11 +100,20 @@ export default function HomeScreen() {
         <TransactionTypeToggle value={transactionType} onChange={setTransactionType} />
 
         {/* Amount input */}
-        <AmountInput value={amount} onChange={setAmount} />
+        <AmountInput value={amount} onChange={(v) => { setAmount(v); setErrorMessage(null); }} />
+
+        {/* Validation error */}
+        {errorMessage && (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        )}
 
         {/* Save button */}
-        <Pressable style={styles.saveButton}>
-          <Text style={styles.saveButtonText}>保存</Text>
+        <Pressable
+          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          <Text style={styles.saveButtonText}>{saving ? '保存中...' : '保存'}</Text>
         </Pressable>
 
         {/* Recent history area */}
@@ -157,9 +190,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
+  errorText: {
+    marginHorizontal: 24,
+    marginTop: 8,
+    fontSize: 13,
+    color: '#E53935',
+    fontWeight: '600',
+  },
   saveButton: {
     marginHorizontal: 24,
-    marginTop: 20,
+    marginTop: 16,
     backgroundColor: '#43A047',
     borderRadius: 14,
     paddingVertical: 16,
@@ -169,6 +209,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 5,
     elevation: 5,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#A5D6A7',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   saveButtonText: {
     color: '#FFFFFF',
