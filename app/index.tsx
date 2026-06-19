@@ -14,6 +14,7 @@ import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
 import { deleteWallet } from '../domain/wallet/walletService';
 import { showRewardedAd } from '../services/ads/RewardAdService';
+import { moodFromTransactionType } from '../utils/walletImages';
 import type { Transaction, TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
@@ -235,7 +236,12 @@ export default function HomeScreen() {
         </View>
 
         {/* Wallet card */}
-        <WalletCard name={wallet.name} balance={wallet.balance} type={wallet.type} />
+        <WalletCard
+          name={wallet.name}
+          balance={wallet.balance}
+          type={wallet.type}
+          mood={moodFromTransactionType(transactionType)}
+        />
 
         {/* Delete wallet button */}
         <Pressable style={styles.deleteWalletButton} onPress={handleDeleteWallet}>

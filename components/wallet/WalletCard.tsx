@@ -1,19 +1,34 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 import type { WalletType } from '../../types/wallet';
+import { getWalletImage, type WalletMood } from '../../utils/walletImages';
 
 interface Props {
   name: string;
   balance: number;
   type: WalletType;
+  mood?: WalletMood;
 }
 
-export function WalletCard({ name, balance }: Props) {
+const WALLET_EMOJI: Record<WalletType, string> = {
+  gamaguchi: '👛',
+  kinchaku:  '👜',
+  long:      '💼',
+  folding:   '👝',
+};
+
+export function WalletCard({ name, balance, type, mood = 'normal' }: Props) {
   const { theme } = useTheme();
+  const image = getWalletImage(theme.id, type, mood);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.illustration}>👛</Text>
+      {image ? (
+        <Image source={image} style={styles.illustration} resizeMode="contain" />
+      ) : (
+        <Text style={styles.illustrationEmoji}>{WALLET_EMOJI[type] ?? '👛'}</Text>
+      )}
       <Text style={styles.name}>{name}</Text>
       <View style={[styles.balanceBanner, { backgroundColor: theme.balanceBanner }]}>
         <Text style={styles.balanceLabel}>残高</Text>
@@ -29,6 +44,10 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   illustration: {
+    width: 120,
+    height: 120,
+  },
+  illustrationEmoji: {
     fontSize: 96,
     lineHeight: 112,
   },
