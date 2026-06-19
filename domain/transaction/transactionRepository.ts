@@ -36,6 +36,17 @@ export async function deleteTransaction(id: string): Promise<void> {
   await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
 }
 
+export function getRecentTransactionsByWalletId(
+  walletId: string,
+  limit: number,
+): Promise<Transaction[]> {
+  const db = getDatabase();
+  return db.getAllAsync<Transaction>(
+    'SELECT * FROM transactions WHERE walletId = ? ORDER BY createdAt DESC LIMIT ?',
+    [walletId, limit],
+  );
+}
+
 export async function deleteTransactionsByWalletId(walletId: string): Promise<void> {
   const db = getDatabase();
   await db.runAsync('DELETE FROM transactions WHERE walletId = ?', [walletId]);

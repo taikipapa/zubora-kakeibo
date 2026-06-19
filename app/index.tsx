@@ -1,14 +1,14 @@
 import { Stack, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AmountInput } from '../components/transaction/AmountInput';
-import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
 import { TransactionListItem } from '../components/history/TransactionListItem';
+import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
 import { AddWalletModal } from '../components/wallet/AddWalletModal';
 import { WalletCard } from '../components/wallet/WalletCard';
 import { initDatabase } from '../db/client';
-import { getAllTransactions } from '../domain/transaction/transactionRepository';
+import { getRecentTransactionsByWalletId } from '../domain/transaction/transactionRepository';
 import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
 import type { Transaction, TransactionType } from '../types/transaction';
@@ -16,6 +16,8 @@ import type { Wallet } from '../types/wallet';
 
 export default function HomeScreen() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(0);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<TransactionType>('income');
@@ -24,13 +26,22 @@ export default function HomeScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Fetch recent transactions for a specific wallet
+  async function loadTransactionsFor(walletList: Wallet[], idx: number) {
+    const w = walletList[idx];
+    if (!w) { setRecentTransactions([]); return; }
+    const txns = await getRecentTransactionsByWalletId(w.id, 5);
+    setRecentTransactions(txns);
+  }
+
+  // Reload all wallets + transactions for current index (used by useFocusEffect)
   const loadData = useCallback(async () => {
-    const [updatedWallets, allTransactions] = await Promise.all([
-      getAllWallets(),
-      getAllTransactions(),
-    ]);
-    setWallets(updatedWallets);
-    setRecentTransactions(allTransactions.slice(0, 5));
+    const updated = await getAllWallets();
+    setWallets(updated);
+    const w = updated[currentIndexRef.current];
+    if (!w) { setRecentTransactions([]); return; }
+    const txns = await getRecentTransactionsByWalletId(w.id, 5);
+    setRecentTransactions(txns);
   }, []);
 
   useFocusEffect(
@@ -44,7 +55,14 @@ export default function HomeScreen() {
     }, [loadData]),
   );
 
-  const wallet = wallets[0] ?? null;
+  // Switch to another wallet by index
+  function navigate(newIndex: number) {
+    setCurrentIndex(newIndex);
+    currentIndexRef.current = newIndex;
+    loadTransactionsFor(wallets, newIndex).catch(console.error);
+  }
+
+  const wallet = wallets[currentIndex] ?? null;
 
   async function handleSave() {
     if (!wallet) return;
@@ -57,13 +75,25 @@ export default function HomeScreen() {
     setErrorMessage(null);
     try {
       await addTransaction(wallet.id, transactionType, parsed);
-      await loadData();
+      const updated = await getAllWallets();
+      setWallets(updated);
+      await loadTransactionsFor(updated, currentIndexRef.current);
       setAmount('');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '保存に失敗しました');
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleWalletCreated() {
+    setShowAddModal(false);
+    const updated = await getAllWallets();
+    const newIndex = updated.length - 1;
+    setWallets(updated);
+    setCurrentIndex(newIndex);
+    currentIndexRef.current = newIndex;
+    await loadTransactionsFor(updated, newIndex);
   }
 
   if (loading) {
@@ -89,32 +119,49 @@ export default function HomeScreen() {
     );
   }
 
+  const isFirst = currentIndex === 0;
+  const isLast = currentIndex === wallets.length - 1;
+
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
       <AddWalletModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onCreated={() => { setShowAddModal(false); loadData(); }}
+        onCreated={handleWalletCreated}
       />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header row: page indicator + add wallet button */}
+        {/* Header: nav buttons + page indicator + add wallet */}
         <View style={styles.header}>
-          <View style={styles.pageBadge}>
-            <Text style={styles.pageText}>
-              1 / {wallets.length}
-            </Text>
+          <View style={styles.navGroup}>
+            <Pressable
+              style={[styles.navButton, isFirst && styles.navButtonDisabled]}
+              onPress={() => navigate(currentIndex - 1)}
+              disabled={isFirst}
+            >
+              <Text style={[styles.navButtonText, isFirst && styles.navButtonTextDisabled]}>◀</Text>
+            </Pressable>
+            <View style={styles.pageBadge}>
+              <Text style={styles.pageText}>{currentIndex + 1} / {wallets.length}</Text>
+            </View>
+            <Pressable
+              style={[styles.navButton, isLast && styles.navButtonDisabled]}
+              onPress={() => navigate(currentIndex + 1)}
+              disabled={isLast}
+            >
+              <Text style={[styles.navButtonText, isLast && styles.navButtonTextDisabled]}>▶</Text>
+            </Pressable>
           </View>
           <Pressable style={styles.addWalletButton} onPress={() => setShowAddModal(true)}>
             <Text style={styles.addWalletText}>＋ 財布を追加</Text>
           </Pressable>
         </View>
 
-        {/* Wallet card: illustration + name + balance banner */}
+        {/* Wallet card */}
         <WalletCard name={wallet.name} balance={wallet.balance} type={wallet.type} />
 
         {/* 入れる / 出す toggle */}
@@ -137,7 +184,7 @@ export default function HomeScreen() {
           <Text style={styles.saveButtonText}>{saving ? '保存中...' : '保存'}</Text>
         </Pressable>
 
-        {/* Recent history area */}
+        {/* Recent history */}
         <View style={styles.historySection}>
           <Text style={styles.historyTitle}>最近の履歴</Text>
           {recentTransactions.length === 0 ? (
@@ -184,6 +231,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 4,
+  },
+  navGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  navButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FF8F00',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#E65100',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  navButtonDisabled: {
+    backgroundColor: 'rgba(255,143,0,0.25)',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  navButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  navButtonTextDisabled: {
+    color: 'rgba(255,255,255,0.5)',
   },
   pageBadge: {
     backgroundColor: '#FF8F00',
