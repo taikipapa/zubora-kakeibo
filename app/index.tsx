@@ -16,6 +16,13 @@ import { deleteWallet } from '../domain/wallet/walletService';
 import type { Transaction, TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
+// Stub for rewarded ad — replace with real AdMob implementation when ready.
+// Returns true if the user completed watching the ad, false otherwise.
+async function showRewardedAd(): Promise<boolean> {
+  // TODO: load and show AdMob rewarded ad here
+  return true;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -98,6 +105,25 @@ export default function HomeScreen() {
     setCurrentIndex(newIndex);
     currentIndexRef.current = newIndex;
     await loadTransactionsFor(updated, newIndex);
+  }
+
+  function handleAddWalletPress() {
+    Alert.alert(
+      '財布を追加',
+      '財布を追加するには広告を見る必要があります。',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '広告を見る',
+          onPress: async () => {
+            const completed = await showRewardedAd();
+            if (completed) {
+              setShowAddModal(true);
+            }
+          },
+        },
+      ],
+    );
   }
 
   function handleDeleteWallet() {
@@ -193,7 +219,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
           <View style={styles.headerRight}>
-            <Pressable style={[styles.addWalletButton, { backgroundColor: theme.primary }]} onPress={() => setShowAddModal(true)}>
+            <Pressable style={[styles.addWalletButton, { backgroundColor: theme.primary }]} onPress={handleAddWalletPress}>
               <Text style={styles.addWalletText}>＋ 財布を追加</Text>
             </Pressable>
             <Pressable style={styles.settingsButton} onPress={() => router.push('/settings')}>
