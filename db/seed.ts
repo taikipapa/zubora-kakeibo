@@ -1,5 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { generateUUID } from '../utils/uuid';
+
 export async function seedInitialWallet(db: SQLiteDatabase): Promise<void> {
   const result = await db.getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM wallets',
@@ -8,6 +10,6 @@ export async function seedInitialWallet(db: SQLiteDatabase): Promise<void> {
 
   await db.runAsync(
     'INSERT INTO wallets (id, name, type, balance, createdAt) VALUES (?, ?, ?, ?, ?)',
-    [crypto.randomUUID(), 'ズボラ財布', 'gamaguchi', 0, new Date().toISOString()],
+    [generateUUID(), 'ズボラ財布', 'gamaguchi', 0, new Date().toISOString()],
   );
 }

@@ -1,4 +1,5 @@
 import { getDatabase } from '../../db/client';
+import { generateUUID } from '../../utils/uuid';
 import type { TransactionType } from '../../types/transaction';
 import { getWalletById, updateWalletBalance } from '../wallet/walletRepository';
 import {
@@ -24,7 +25,7 @@ export async function addTransaction(
   await db.withTransactionAsync(async () => {
     await updateWalletBalance(walletId, newBalance);
     await createTransaction({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       walletId,
       walletName: wallet.name,
       type,

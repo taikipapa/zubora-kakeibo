@@ -1,5 +1,6 @@
 import { getDatabase } from '../../db/client';
 import { seedInitialWallet } from '../../db/seed';
+import { generateUUID } from '../../utils/uuid';
 import type { Wallet, WalletType } from '../../types/wallet';
 import { deleteAllTransactions, deleteTransactionsByWalletId } from '../transaction/transactionRepository';
 import {
@@ -21,7 +22,7 @@ export async function createWallet(name: string, type: WalletType): Promise<Wall
     throw new Error(`財布は最大${MAX_WALLETS}個まで作成できます`);
   }
   const wallet: Wallet = {
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     name: name.trim(),
     type,
     balance: 0,
