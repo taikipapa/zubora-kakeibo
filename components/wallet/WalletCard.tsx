@@ -1,8 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { WalletType } from '../../types/wallet';
+
 interface Props {
   name: string;
   balance: number;
+  type: WalletType;
 }
 
 export function WalletCard({ name, balance }: Props) {

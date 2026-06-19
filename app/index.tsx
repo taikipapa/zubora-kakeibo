@@ -1,18 +1,53 @@
 import { Stack } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AmountInput } from '../components/transaction/AmountInput';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
 import { WalletCard } from '../components/wallet/WalletCard';
+import { initDatabase } from '../db/client';
+import { getAllWallets } from '../domain/wallet/walletRepository';
 import type { TransactionType } from '../types/transaction';
-
-const MOCK_WALLET = { name: 'ズボラ財布', balance: 0 };
-const MOCK_PAGE = { current: 1, total: 5 };
+import type { Wallet } from '../types/wallet';
 
 export default function HomeScreen() {
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [loading, setLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<TransactionType>('income');
   const [amount, setAmount] = useState('');
+
+  useEffect(() => {
+    initDatabase()
+      .then(() => getAllWallets())
+      .then(setWallets)
+      .catch((err) => console.error('Failed to load wallets', err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const wallet = wallets[0] ?? null;
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#FF8F00" />
+          <Text style={styles.loadingText}>財布を準備中...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!wallet) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.centered}>
+          <Text style={styles.loadingText}>財布を準備中...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -26,7 +61,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.pageBadge}>
             <Text style={styles.pageText}>
-              {MOCK_PAGE.current} / {MOCK_PAGE.total}
+              1 / {wallets.length}
             </Text>
           </View>
           <Pressable style={styles.addWalletButton}>
@@ -35,7 +70,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Wallet card: illustration + name + balance banner */}
-        <WalletCard name={MOCK_WALLET.name} balance={MOCK_WALLET.balance} />
+        <WalletCard name={wallet.name} balance={wallet.balance} type={wallet.type} />
 
         {/* 入れる / 出す toggle */}
         <TransactionTypeToggle value={transactionType} onChange={setTransactionType} />
@@ -64,6 +99,17 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#FFE033',
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#8D6E00',
   },
   scroll: {
     flex: 1,
