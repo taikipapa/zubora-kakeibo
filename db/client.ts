@@ -2,6 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { runInitialMigration } from './migrations/001_initial';
+import { seedInitialWallet } from './seed';
 
 const DATABASE_NAME = 'zubora-kakeibo.db';
 
@@ -11,6 +12,7 @@ let initPromise: Promise<SQLiteDatabase> | null = null;
 async function openAndMigrate(): Promise<SQLiteDatabase> {
   const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
   await runInitialMigration(db);
+  await seedInitialWallet(db);
   return db;
 }
 
