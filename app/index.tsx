@@ -13,17 +13,11 @@ import { getRecentTransactionsByWalletId } from '../domain/transaction/transacti
 import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
 import { deleteWallet } from '../domain/wallet/walletService';
+import { showRewardedAd } from '../services/ads/RewardAdService';
 import type { Transaction, TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
 const MAX_WALLETS = 5;
-
-// Stub for rewarded ad — replace with real AdMob implementation when ready.
-// Returns true if the user completed watching the ad, false otherwise.
-async function showRewardedAd(): Promise<boolean> {
-  // TODO: load and show AdMob rewarded ad here
-  return true;
-}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -125,6 +119,8 @@ export default function HomeScreen() {
             const completed = await showRewardedAd();
             if (completed) {
               setShowAddModal(true);
+            } else {
+              Alert.alert('広告の視聴が完了しませんでした', '財布を追加するには広告を最後まで視聴してください。');
             }
           },
         },
