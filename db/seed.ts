@@ -9,7 +9,7 @@ export async function seedInitialWallet(db: SQLiteDatabase): Promise<void> {
   if ((result?.count ?? 0) > 0) return;
 
   await db.runAsync(
-    'INSERT INTO wallets (id, name, type, balance, createdAt) VALUES (?, ?, ?, ?, ?)',
-    [generateUUID(), 'ズボラ財布', 'gamaguchi', 0, new Date().toISOString()],
+    'INSERT INTO wallets (id, name, type, themeId, balance, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+    [generateUUID(), 'ズボラ財布', 'gamaguchi', 'waiwai', 0, new Date().toISOString()],
   );
 }

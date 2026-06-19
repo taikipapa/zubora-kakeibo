@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { TransactionType } from '../../types/transaction';
 
 interface Props {
-  value: TransactionType;
+  value: TransactionType | null;
   onChange: (type: TransactionType) => void;
 }
 
@@ -11,18 +11,18 @@ export function TransactionTypeToggle({ value, onChange }: Props) {
   return (
     <View style={styles.container}>
       <Pressable
-        style={[styles.button, value === 'income' ? styles.incomeActive : styles.inactive]}
+        style={[styles.button, value === 'income' ? styles.incomeActive : styles.incomeInactive]}
         onPress={() => onChange('income')}
       >
-        <Text style={[styles.text, value === 'income' ? styles.incomeText : styles.inactiveText]}>
+        <Text style={[styles.text, value === 'income' ? styles.incomeActiveText : styles.incomeInactiveText]}>
           ↑ 入れる
         </Text>
       </Pressable>
       <Pressable
-        style={[styles.button, value === 'expense' ? styles.expenseActive : styles.inactive]}
+        style={[styles.button, value === 'expense' ? styles.expenseActive : styles.expenseInactive]}
         onPress={() => onChange('expense')}
       >
-        <Text style={[styles.text, value === 'expense' ? styles.expenseText : styles.inactiveText]}>
+        <Text style={[styles.text, value === 'expense' ? styles.expenseActiveText : styles.expenseInactiveText]}>
           ↓ 出す
         </Text>
       </Pressable>
@@ -43,6 +43,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
+  /* 入れる */
   incomeActive: {
     backgroundColor: '#43A047',
     shadowColor: '#1B5E20',
@@ -51,32 +52,39 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
+  incomeInactive: {
+    backgroundColor: 'rgba(67,160,71,0.08)',
+    borderWidth: 1.5,
+    borderColor: '#43A047',
+  },
+  /* 出す */
   expenseActive: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#E53935',
+    backgroundColor: '#E53935',
     shadowColor: '#B71C1C',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.35,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
-  inactive: {
-    backgroundColor: 'rgba(255,255,255,0.45)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.7)',
+  expenseInactive: {
+    backgroundColor: 'rgba(229,57,53,0.08)',
+    borderWidth: 1.5,
+    borderColor: '#E53935',
   },
   text: {
     fontSize: 16,
     fontWeight: '700',
   },
-  incomeText: {
+  incomeActiveText: {
     color: '#FFFFFF',
   },
-  expenseText: {
-    color: '#E53935',
+  incomeInactiveText: {
+    color: '#388E3C',
   },
-  inactiveText: {
-    color: '#8D6E00',
+  expenseActiveText: {
+    color: '#FFFFFF',
+  },
+  expenseInactiveText: {
+    color: '#C62828',
   },
 });

@@ -1,24 +1,34 @@
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { AmountInput } from '../components/transaction/AmountInput';
-import { TransactionListItem } from '../components/history/TransactionListItem';
+import { NumPad } from '../components/transaction/NumPad';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
 import { AddWalletModal } from '../components/wallet/AddWalletModal';
 import { WalletCard } from '../components/wallet/WalletCard';
+import { WalletTabBar } from '../components/wallet/WalletTabBar';
 import { initDatabase } from '../db/client';
+import { themes } from '../theme/themes';
 import { useTheme } from '../theme/ThemeContext';
-import { getRecentTransactionsByWalletId } from '../domain/transaction/transactionRepository';
 import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
-import { deleteWallet } from '../domain/wallet/walletService';
+import { deleteWallet as deleteWalletService, reorderWallets } from '../domain/wallet/walletService';
 import { showRewardedAd } from '../services/ads/RewardAdService';
-import { moodFromTransactionType } from '../utils/walletImages';
-import type { Transaction, TransactionType } from '../types/transaction';
+import type { WalletMood } from '../utils/walletImages';
+import type { TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
 const MAX_WALLETS = 5;
+const MAX_AMOUNT = 9999999;
+const MOOD_RESET_DELAY_MS = 2000;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -26,30 +36,22 @@ export default function HomeScreen() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [transactionType, setTransactionType] = useState<TransactionType>('income');
-  const [amount, setAmount] = useState('');
+  const [transactionType, setTransactionType] = useState<TransactionType | null>(null);
+  const [amount, setAmount] = useState(0);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [displayMood, setDisplayMood] = useState<WalletMood>('normal');
+  const moodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch recent transactions for a specific wallet
-  async function loadTransactionsFor(walletList: Wallet[], idx: number) {
-    const w = walletList[idx];
-    if (!w) { setRecentTransactions([]); return; }
-    const txns = await getRecentTransactionsByWalletId(w.id, 5);
-    setRecentTransactions(txns);
-  }
+  useEffect(() => {
+    return () => { if (moodTimerRef.current) clearTimeout(moodTimerRef.current); };
+  }, []);
 
-  // Reload all wallets + transactions for current index (used by useFocusEffect)
   const loadData = useCallback(async () => {
     const updated = await getAllWallets();
     setWallets(updated);
-    const w = updated[currentIndexRef.current];
-    if (!w) { setRecentTransactions([]); return; }
-    const txns = await getRecentTransactionsByWalletId(w.id, 5);
-    setRecentTransactions(txns);
   }, []);
 
   useFocusEffect(
@@ -63,31 +65,58 @@ export default function HomeScreen() {
     }, [loadData]),
   );
 
-  // Switch to another wallet by index
   function navigate(newIndex: number) {
     setCurrentIndex(newIndex);
     currentIndexRef.current = newIndex;
-    loadTransactionsFor(wallets, newIndex).catch(console.error);
+  }
+
+  function handleNumPadKey(key: string) {
+    setErrorMessage(null);
+    if (key === '⌫') {
+      setAmount(prev => Math.floor(prev / 10));
+      return;
+    }
+    if (key === '00') {
+      setAmount(prev => {
+        if (prev === 0) return 0;
+        const next = prev * 100;
+        return next > MAX_AMOUNT ? prev : next;
+      });
+      return;
+    }
+    const digit = parseInt(key, 10);
+    setAmount(prev => {
+      const next = prev * 10 + digit;
+      return next > MAX_AMOUNT ? prev : next;
+    });
   }
 
   const wallet = wallets[currentIndex] ?? null;
+  // Use wallet's themeId for home screen UI; always fall back to waiwai if missing/invalid
+  const walletThemeId = (wallet?.themeId && wallet.themeId in themes) ? wallet.themeId : 'waiwai';
+  const walletTheme = themes[walletThemeId] ?? themes.waiwai;
+  const hasValidAmount = amount > 0;
 
-  async function handleSave() {
-    if (!wallet) return;
-    const parsed = parseInt(amount, 10);
-    if (!amount.trim() || isNaN(parsed) || parsed <= 0) {
-      setErrorMessage('金額を正しく入力してください');
-      return;
-    }
+  async function handleTransactionTypePress(type: TransactionType) {
+    setTransactionType(type);
+    if (!hasValidAmount || !wallet || saving) return;
+
+    // Instantly show mood BEFORE DB
+    const savedMood: WalletMood = type === 'income' ? 'happy' : 'sad';
+    setDisplayMood(savedMood);
+    if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
+
     setSaving(true);
     setErrorMessage(null);
     try {
-      await addTransaction(wallet.id, transactionType, parsed);
+      await addTransaction(wallet.id, type, amount);
       const updated = await getAllWallets();
       setWallets(updated);
-      await loadTransactionsFor(updated, currentIndexRef.current);
-      setAmount('');
+      setAmount(0);
+      setTransactionType(null);
+      moodTimerRef.current = setTimeout(() => setDisplayMood('normal'), MOOD_RESET_DELAY_MS);
     } catch (err) {
+      setDisplayMood('normal');
       setErrorMessage(err instanceof Error ? err.message : '保存に失敗しました');
     } finally {
       setSaving(false);
@@ -101,7 +130,42 @@ export default function HomeScreen() {
     setWallets(updated);
     setCurrentIndex(newIndex);
     currentIndexRef.current = newIndex;
-    await loadTransactionsFor(updated, newIndex);
+  }
+
+  async function handleDeleteWalletFromTab(w: Wallet) {
+    try {
+      const selectedId = wallets[currentIndex]?.id;
+      await deleteWalletService(w.id);
+      const updated = await getAllWallets();
+      setWallets(updated);
+      // Keep selected wallet if it still exists; otherwise go to index 0
+      let newIdx = updated.findIndex(x => x.id === selectedId);
+      if (newIdx < 0) newIdx = 0;
+      setCurrentIndex(newIdx);
+      currentIndexRef.current = newIdx;
+    } catch (err) {
+      Alert.alert('エラー', err instanceof Error ? err.message : '削除に失敗しました');
+    }
+  }
+
+  async function handleReorderWallets(newOrder: Wallet[]) {
+    try {
+      const selectedId = wallets[currentIndex]?.id;
+      await reorderWallets(newOrder);
+      const updated = await getAllWallets();
+      setWallets(updated);
+      let newIdx = updated.findIndex(x => x.id === selectedId);
+      if (newIdx < 0) newIdx = 0;
+      setCurrentIndex(newIdx);
+      currentIndexRef.current = newIdx;
+    } catch (err) {
+      console.error('Failed to reorder wallets', err);
+    }
+  }
+
+  function handleSelectWalletById(walletId: string) {
+    const idx = wallets.findIndex(w => w.id === walletId);
+    if (idx >= 0) navigate(idx);
   }
 
   function handleAddWalletPress() {
@@ -122,38 +186,6 @@ export default function HomeScreen() {
               setShowAddModal(true);
             } else {
               Alert.alert('広告の視聴が完了しませんでした', '財布を追加するには広告を最後まで視聴してください。');
-            }
-          },
-        },
-      ],
-    );
-  }
-
-  function handleDeleteWallet() {
-    if (!wallet) return;
-    if (wallets.length <= 1) {
-      Alert.alert('削除できません', '最後の財布は削除できません');
-      return;
-    }
-    Alert.alert(
-      `「${wallet.name}」を削除しますか？`,
-      'この財布の入出金履歴もすべて削除されます。',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: '削除',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteWallet(wallet.id);
-              const updated = await getAllWallets();
-              const newIndex = Math.max(0, currentIndex - 1);
-              setWallets(updated);
-              setCurrentIndex(newIndex);
-              currentIndexRef.current = newIndex;
-              await loadTransactionsFor(updated, newIndex);
-            } catch (err) {
-              Alert.alert('エラー', err instanceof Error ? err.message : '削除に失敗しました');
             }
           },
         },
@@ -184,104 +216,66 @@ export default function HomeScreen() {
     );
   }
 
-  const isFirst = currentIndex === 0;
-  const isLast = currentIndex === wallets.length - 1;
   const isAtLimit = wallets.length >= MAX_WALLETS;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: walletTheme.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <AddWalletModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onCreated={handleWalletCreated}
       />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header: nav buttons + page indicator + add wallet */}
-        <View style={styles.header}>
-          <View style={styles.navGroup}>
-            <Pressable
-              style={[styles.navButton, { backgroundColor: theme.primary }, isFirst && styles.navButtonDisabled]}
-              onPress={() => navigate(currentIndex - 1)}
-              disabled={isFirst}
-            >
-              <Text style={[styles.navButtonText, isFirst && styles.navButtonTextDisabled]}>◀</Text>
-            </Pressable>
-            <View style={[styles.pageBadge, { backgroundColor: theme.primary }]}>
-              <Text style={styles.pageText}>{currentIndex + 1} / {wallets.length}</Text>
-            </View>
-            <Pressable
-              style={[styles.navButton, { backgroundColor: theme.primary }, isLast && styles.navButtonDisabled]}
-              onPress={() => navigate(currentIndex + 1)}
-              disabled={isLast}
-            >
-              <Text style={[styles.navButtonText, isLast && styles.navButtonTextDisabled]}>▶</Text>
-            </Pressable>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable
-              style={[styles.addWalletButton, { backgroundColor: theme.primary }, isAtLimit && styles.addWalletButtonDisabled]}
-              onPress={handleAddWalletPress}
-            >
-              <Text style={styles.addWalletText}>＋ 財布を追加</Text>
-            </Pressable>
-            <Pressable style={styles.settingsButton} onPress={() => router.push('/settings')}>
-              <Text style={styles.settingsButtonText}>⚙</Text>
-            </Pressable>
-          </View>
-        </View>
 
-        {/* Wallet card */}
-        <WalletCard
-          name={wallet.name}
-          balance={wallet.balance}
-          type={wallet.type}
-          mood={moodFromTransactionType(transactionType)}
+      <View style={styles.screen}>
+        {/* Wallet tab bar: drag to reorder, long press to delete */}
+        <WalletTabBar
+          wallets={wallets}
+          selectedWalletId={wallet.id}
+          isAtLimit={isAtLimit}
+          currentTheme={walletTheme}
+          onSelect={handleSelectWalletById}
+          onAdd={handleAddWalletPress}
+          onDelete={handleDeleteWalletFromTab}
+          onReorder={handleReorderWallets}
+          onSettings={() => router.push('/settings')}
         />
 
-        {/* Delete wallet button */}
-        <Pressable style={styles.deleteWalletButton} onPress={handleDeleteWallet}>
-          <Text style={styles.deleteWalletText}>この財布を削除</Text>
-        </Pressable>
+        {/* Wallet card: image + balance */}
+        <View style={styles.walletSection}>
+          <WalletCard
+            balance={wallet.balance}
+            type={wallet.type}
+            mood={displayMood}
+            themeId={wallet.themeId}
+          />
+        </View>
 
-        {/* 入れる / 出す toggle */}
-        <TransactionTypeToggle value={transactionType} onChange={setTransactionType} />
+        {/* 入れる / 出す (dimmed when amount is 0) */}
+        <View style={[styles.toggleWrapper, !hasValidAmount && styles.toggleDisabled]}
+              pointerEvents={hasValidAmount ? 'auto' : 'box-none'}>
+          <TransactionTypeToggle value={transactionType} onChange={handleTransactionTypePress} />
+        </View>
 
-        {/* Amount input */}
-        <AmountInput value={amount} onChange={(v) => { setAmount(v); setErrorMessage(null); }} />
+        {/* Amount display */}
+        <View style={styles.amountDisplay}>
+          <Text style={styles.amountText}>
+            {amount > 0 ? amount.toLocaleString() : '0'}
+          </Text>
+          <Text style={styles.amountUnit}>円</Text>
+        </View>
 
-        {/* Validation error */}
+        {/* Error message */}
         {errorMessage && (
           <Text style={styles.errorText}>{errorMessage}</Text>
         )}
 
-        {/* Save button */}
-        <Pressable
-          style={[styles.saveButton, { backgroundColor: theme.saveButton }, saving && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <Text style={styles.saveButtonText}>{saving ? '保存中...' : '保存'}</Text>
-        </Pressable>
+        {/* Custom numpad */}
+        <NumPad onPress={handleNumPadKey} />
 
-        {/* Recent history */}
-        <View style={styles.historySection}>
-          <Text style={styles.historyTitle}>最近の履歴</Text>
-          {recentTransactions.length === 0 ? (
-            <View style={styles.historyEmpty}>
-              <Text style={styles.historyEmptyText}>まだ履歴がありません</Text>
-            </View>
-          ) : (
-            recentTransactions.map((t) => (
-              <TransactionListItem key={t.id} transaction={t} />
-            ))
-          )}
-        </View>
-      </ScrollView>
+        {/* Banner ad placeholder — reserve space for future AdMob banner (50px standard height) */}
+        <View style={styles.bannerPlaceholder} />
+      </View>
     </SafeAreaView>
   );
 }
@@ -290,6 +284,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#FFE033',
+  },
+  screen: {
+    flex: 1,
   },
   centered: {
     flex: 1,
@@ -302,165 +299,51 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#8D6E00',
   },
-  scroll: {
+
+  /* Wallet section */
+  walletSection: {
     flex: 1,
-  },
-  content: {
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 4,
-  },
-  navGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  navButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FF8F00',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#E65100',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 3,
-    elevation: 3,
   },
-  navButtonDisabled: {
-    backgroundColor: 'rgba(255,143,0,0.25)',
-    shadowOpacity: 0,
-    elevation: 0,
+
+  /* Toggle */
+  toggleWrapper: {
+    marginTop: 4,
   },
-  navButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
+  toggleDisabled: {
+    opacity: 0.35,
   },
-  navButtonTextDisabled: {
-    color: 'rgba(255,255,255,0.5)',
-  },
-  pageBadge: {
-    backgroundColor: '#FF8F00',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    shadowColor: '#E65100',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  pageText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  addWalletButton: {
-    backgroundColor: '#FF8F00',
-    borderRadius: 10,
-    paddingHorizontal: 14,
+
+  /* Amount display */
+  amountDisplay: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 24,
     paddingVertical: 8,
-    shadowColor: '#E65100',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 3,
-    elevation: 3,
   },
-  addWalletText: {
-    color: '#FFFFFF',
+  amountText: {
+    fontSize: 44,
+    fontWeight: '900',
+    color: '#3E2700',
+    letterSpacing: 1,
+  },
+  amountUnit: {
+    fontSize: 22,
     fontWeight: '700',
-    fontSize: 14,
-  },
-  addWalletButtonDisabled: {
-    opacity: 0.4,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  settingsButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingsButtonText: {
-    fontSize: 18,
     color: '#5D3A00',
+    marginLeft: 6,
   },
   errorText: {
     marginHorizontal: 24,
-    marginTop: 8,
+    marginBottom: 4,
     fontSize: 13,
     color: '#E53935',
     fontWeight: '600',
+    textAlign: 'right',
   },
-  saveButton: {
-    marginHorizontal: 24,
-    marginTop: 16,
-    backgroundColor: '#43A047',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#1B5E20',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#A5D6A7',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 2,
-  },
-  deleteWalletButton: {
-    alignSelf: 'center',
-    marginTop: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-  },
-  deleteWalletText: {
-    fontSize: 12,
-    color: '#E53935',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  historySection: {
-    marginTop: 28,
-    marginHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 16,
-    padding: 16,
-  },
-  historyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#5D3A00',
-    marginBottom: 12,
-  },
-  historyEmpty: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  historyEmptyText: {
-    fontSize: 14,
-    color: '#A07800',
+  bannerPlaceholder: {
+    height: 60, // AdMob standard banner (320×50) + safe margin
   },
 });

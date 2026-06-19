@@ -77,6 +77,26 @@ export function getWalletImage(
   return WALLET_IMAGES[themeId]?.[type]?.[mood] ?? null;
 }
 
+/**
+ * Determine the themeId that belongs to a given walletType.
+ * walletType and its visual theme/image set are always paired.
+ * When new walletTypes are added, extend this switch.
+ */
+export function getThemeIdForWalletType(walletType: WalletType): ThemeId {
+  switch (walletType) {
+    case 'gamaguchi':
+      return 'waiwai';
+    case 'kinchaku':
+      return 'waiwai';
+    case 'long':
+      return 'hokkori';
+    case 'folding':
+      return 'hokkori';
+    default:
+      return 'waiwai';
+  }
+}
+
 /** Derive WalletMood from transaction type selection. */
 export function moodFromTransactionType(
   transactionType: 'income' | 'expense' | null,

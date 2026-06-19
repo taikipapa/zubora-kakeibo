@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
 
 import { createWallet } from '../../domain/wallet/walletService';
 import type { WalletType } from '../../types/wallet';
+import { getThemeIdForWalletType, getWalletImage } from '../../utils/walletImages';
 
 interface Props {
   visible: boolean;
@@ -25,16 +27,10 @@ const WALLET_TYPES: { value: WalletType; label: string; emoji: string }[] = [
   { value: 'folding', label: '二つ折り', emoji: '👝' },
 ];
 
-export function AddWalletModal({ visible, onClose, onCreated }: Props) {
+export function AddWalletModal({ visible, onCreated }: Props) {
   const [name, setName] = useState('');
   const [type, setType] = useState<WalletType>('gamaguchi');
   const [saving, setSaving] = useState(false);
-
-  function handleClose() {
-    setName('');
-    setType('gamaguchi');
-    onClose();
-  }
 
   async function handleSave() {
     if (!name.trim()) {
@@ -55,9 +51,15 @@ export function AddWalletModal({ visible, onClose, onCreated }: Props) {
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <Pressable style={styles.overlay} onPress={handleClose}>
-        <Pressable style={styles.card} onPress={() => {}}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={() => {}}
+    >
+      {/* No onPress on overlay — tapping outside does nothing */}
+      <View style={styles.overlay}>
+        <View style={styles.card}>
           <Text style={styles.title}>財布を追加</Text>
 
           {/* 名前入力 */}
@@ -72,38 +74,41 @@ export function AddWalletModal({ visible, onClose, onCreated }: Props) {
             autoFocus
           />
 
-          {/* タイプ選択 */}
-          <Text style={styles.label}>タイプ</Text>
+          {/* 財布タイプ選択（タイプに紐づくテーマの normal 画像を表示） */}
+          <Text style={styles.label}>財布を選ぶ</Text>
           <View style={styles.typeRow}>
-            {WALLET_TYPES.map((t) => (
-              <Pressable
-                key={t.value}
-                style={[styles.typeButton, type === t.value && styles.typeButtonActive]}
-                onPress={() => setType(t.value)}
-              >
-                <Text style={styles.typeEmoji}>{t.emoji}</Text>
-                <Text style={[styles.typeLabel, type === t.value && styles.typeLabelActive]}>
-                  {t.label}
-                </Text>
-              </Pressable>
-            ))}
+            {WALLET_TYPES.map((t) => {
+              const themeId = getThemeIdForWalletType(t.value);
+              const image = getWalletImage(themeId, t.value, 'normal');
+              return (
+                <Pressable
+                  key={t.value}
+                  style={[styles.typeButton, type === t.value && styles.typeButtonActive]}
+                  onPress={() => setType(t.value)}
+                >
+                  {image ? (
+                    <Image source={image} style={styles.typeImage} resizeMode="contain" />
+                  ) : (
+                    <Text style={styles.typeEmoji}>{t.emoji}</Text>
+                  )}
+                  <Text style={[styles.typeLabel, type === t.value && styles.typeLabelActive]}>
+                    {t.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
-          {/* アクションボタン */}
-          <View style={styles.actions}>
-            <Pressable style={styles.cancelButton} onPress={handleClose}>
-              <Text style={styles.cancelText}>キャンセル</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              <Text style={styles.saveText}>{saving ? '作成中...' : '作成'}</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Pressable>
+          {/* 作成ボタンのみ（キャンセルなし） */}
+          <Pressable
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            <Text style={styles.saveText}>{saving ? '作成中...' : '作成'}</Text>
+          </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -112,15 +117,17 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: 24,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   card: {
     width: '100%',
     backgroundColor: '#FFFDE7',
     borderRadius: 20,
-    padding: 24,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
@@ -128,14 +135,14 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '900',
     color: '#3E2700',
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#8D6E00',
     marginBottom: 6,
@@ -149,17 +156,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     color: '#3E2700',
-    marginBottom: 18,
+    marginBottom: 14,
   },
   typeRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 24,
+    gap: 6,
+    marginBottom: 20,
   },
   typeButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 2,
@@ -169,8 +176,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF9C4',
     borderColor: '#FF8F00',
   },
+  typeImage: {
+    width: 48,
+    height: 48,
+    marginBottom: 2,
+  },
   typeEmoji: {
-    fontSize: 24,
+    fontSize: 32,
     marginBottom: 2,
   },
   typeLabel: {
@@ -181,25 +193,8 @@ const styles = StyleSheet.create({
   typeLabelActive: {
     color: '#E65100',
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.07)',
-  },
-  cancelText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#6D4C00',
-  },
   saveButton: {
-    flex: 1,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     backgroundColor: '#FF8F00',
@@ -215,7 +210,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   saveText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '900',
     color: '#FFFFFF',
   },

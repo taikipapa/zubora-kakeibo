@@ -3,7 +3,16 @@ import type { Wallet } from '../../types/wallet';
 
 export function getAllWallets(): Promise<Wallet[]> {
   const db = getDatabase();
-  return db.getAllAsync<Wallet>('SELECT * FROM wallets ORDER BY createdAt ASC');
+  return db.getAllAsync<Wallet>('SELECT * FROM wallets ORDER BY displayOrder ASC, createdAt ASC');
+}
+
+export async function updateWalletsDisplayOrder(orderedIds: string[]): Promise<void> {
+  const db = getDatabase();
+  await db.withTransactionAsync(async () => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.runAsync('UPDATE wallets SET displayOrder = ? WHERE id = ?', [i, orderedIds[i]]);
+    }
+  });
 }
 
 export function getWalletById(id: string): Promise<Wallet | null> {
@@ -14,8 +23,8 @@ export function getWalletById(id: string): Promise<Wallet | null> {
 export async function createWallet(wallet: Wallet): Promise<void> {
   const db = getDatabase();
   await db.runAsync(
-    'INSERT INTO wallets (id, name, type, balance, createdAt) VALUES (?, ?, ?, ?, ?)',
-    [wallet.id, wallet.name, wallet.type, wallet.balance, wallet.createdAt],
+    'INSERT INTO wallets (id, name, type, themeId, balance, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+    [wallet.id, wallet.name, wallet.type, wallet.themeId, wallet.balance, wallet.createdAt],
   );
 }
 

@@ -3,7 +3,6 @@ import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } fr
 
 import { resetAllData } from '../domain/wallet/walletService';
 import { useTheme } from '../theme/ThemeContext';
-import type { ThemeId } from '../types/settings';
 
 function stub(label: string) {
   Alert.alert(label, 'この機能はまだ実装されていません');
@@ -54,20 +53,7 @@ function SettingsRow({
 }
 
 export default function SettingsScreen() {
-  const { theme, themeId, setThemeId } = useTheme();
-
-  function handleThemeToggle() {
-    const LABELS: Record<ThemeId, string> = { waiwai: 'わいわい', hokkori: 'ほっこり' };
-    Alert.alert(
-      'テーマを選択',
-      `現在: ${LABELS[themeId]}`,
-      [
-        { text: 'わいわい（元気・黄色）', onPress: () => setThemeId('waiwai') },
-        { text: 'ほっこり（やさしい・クリーム）', onPress: () => setThemeId('hokkori') },
-        { text: 'キャンセル', style: 'cancel' },
-      ],
-    );
-  }
+  const { theme } = useTheme();
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -80,16 +66,6 @@ export default function SettingsScreen() {
         }}
       />
       <ScrollView contentContainerStyle={styles.content}>
-        {/* テーマ */}
-        <Text style={styles.sectionTitle}>表示設定</Text>
-        <View style={styles.section}>
-          <SettingsRow
-            label="テーマ切り替え"
-            description={`現在: ${themeId === 'waiwai' ? 'わいわい' : 'ほっこり'}`}
-            onPress={handleThemeToggle}
-          />
-        </View>
-
         {/* データ管理 */}
         <Text style={styles.sectionTitle}>データ管理</Text>
         <View style={styles.section}>

@@ -1,6 +1,7 @@
 import { getDatabase } from '../../db/client';
 import { seedInitialWallet } from '../../db/seed';
 import { generateUUID } from '../../utils/uuid';
+import { getThemeIdForWalletType } from '../../utils/walletImages';
 import type { Wallet, WalletType } from '../../types/wallet';
 import { deleteAllTransactions, deleteTransactionsByWalletId } from '../transaction/transactionRepository';
 import {
@@ -8,6 +9,7 @@ import {
   createWallet as createWalletRecord,
   deleteAllWallets,
   deleteWallet as deleteWalletRecord,
+  updateWalletsDisplayOrder,
 } from './walletRepository';
 
 const MAX_WALLETS = 5;
@@ -25,11 +27,16 @@ export async function createWallet(name: string, type: WalletType): Promise<Wall
     id: generateUUID(),
     name: name.trim(),
     type,
+    themeId: getThemeIdForWalletType(type),
     balance: 0,
     createdAt: new Date().toISOString(),
   };
   await createWalletRecord(wallet);
   return wallet;
+}
+
+export async function reorderWallets(wallets: import('../../types/wallet').Wallet[]): Promise<void> {
+  await updateWalletsDisplayOrder(wallets.map(w => w.id));
 }
 
 export async function resetAllData(): Promise<void> {

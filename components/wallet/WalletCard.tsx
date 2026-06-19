@@ -1,14 +1,16 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 
+import { themes } from '../../theme/themes';
 import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeId } from '../../types/settings';
 import type { WalletType } from '../../types/wallet';
 import { getWalletImage, type WalletMood } from '../../utils/walletImages';
 
 interface Props {
-  name: string;
   balance: number;
   type: WalletType;
   mood?: WalletMood;
+  themeId?: ThemeId; // override global theme for this wallet
 }
 
 const WALLET_EMOJI: Record<WalletType, string> = {
@@ -18,9 +20,11 @@ const WALLET_EMOJI: Record<WalletType, string> = {
   folding:   '👝',
 };
 
-export function WalletCard({ name, balance, type, mood = 'normal' }: Props) {
+export function WalletCard({ balance, type, mood = 'normal', themeId: propThemeId }: Props) {
   const { theme } = useTheme();
-  const image = getWalletImage(theme.id, type, mood);
+  const effectiveTheme = (propThemeId ? (themes[propThemeId] ?? theme) : theme);
+  const effectiveThemeId = (propThemeId && themes[propThemeId]) ? propThemeId : theme.id;
+  const image = getWalletImage(effectiveThemeId, type, mood);
 
   return (
     <View style={styles.container}>
@@ -29,8 +33,7 @@ export function WalletCard({ name, balance, type, mood = 'normal' }: Props) {
       ) : (
         <Text style={styles.illustrationEmoji}>{WALLET_EMOJI[type] ?? '👛'}</Text>
       )}
-      <Text style={styles.name}>{name}</Text>
-      <View style={[styles.balanceBanner, { backgroundColor: theme.balanceBanner }]}>
+      <View style={[styles.balanceBanner, { backgroundColor: effectiveTheme.balanceBanner }]}>
         <Text style={styles.balanceLabel}>残高</Text>
         <Text style={styles.balanceAmount}>{balance.toLocaleString()}円</Text>
       </View>
@@ -41,35 +44,26 @@ export function WalletCard({ name, balance, type, mood = 'normal' }: Props) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: 16,
   },
   illustration: {
-    width: 120,
-    height: 120,
+    width: 220,
+    height: 220,
   },
   illustrationEmoji: {
-    fontSize: 96,
-    lineHeight: 112,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#5D3A00',
-    marginTop: 8,
-    letterSpacing: 1,
+    fontSize: 160,
+    lineHeight: 180,
   },
   balanceBanner: {
     marginTop: 12,
-    backgroundColor: '#E53935',
     borderRadius: 12,
     paddingHorizontal: 28,
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 8,
-    shadowColor: '#B71C1C',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
