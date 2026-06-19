@@ -1,1 +1,20 @@
-// TODO: テーブル定義
+export const CREATE_WALLETS_TABLE = `
+CREATE TABLE IF NOT EXISTS wallets (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  balance INTEGER NOT NULL,
+  createdAt TEXT NOT NULL
+);
+`;
+
+export const CREATE_TRANSACTIONS_TABLE = `
+CREATE TABLE IF NOT EXISTS transactions (
+  id TEXT PRIMARY KEY NOT NULL,
+  walletId TEXT NOT NULL,
+  walletName TEXT NOT NULL,
+  type TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  createdAt TEXT NOT NULL
+);
+`;

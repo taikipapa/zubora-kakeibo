@@ -1,1 +1,5 @@
-// TODO: Settings / ThemeId 型定義
+export type ThemeId = 'waiwai' | 'hokkori';
+
+export interface Settings {
+  theme: ThemeId;
+}
