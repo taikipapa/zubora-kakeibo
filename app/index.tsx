@@ -1,5 +1,5 @@
-import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AmountInput } from '../components/transaction/AmountInput';
@@ -22,21 +22,25 @@ export default function HomeScreen() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const [updatedWallets, allTransactions] = await Promise.all([
       getAllWallets(),
       getAllTransactions(),
     ]);
     setWallets(updatedWallets);
     setRecentTransactions(allTransactions.slice(0, 5));
-  }
-
-  useEffect(() => {
-    initDatabase()
-      .then(loadData)
-      .catch((err) => console.error('Failed to load data', err))
-      .finally(() => setLoading(false));
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      initDatabase()
+        .then(() => { if (!cancelled) return loadData(); })
+        .catch((err) => console.error('Failed to load data', err))
+        .finally(() => { if (!cancelled) setLoading(false); });
+      return () => { cancelled = true; };
+    }, [loadData]),
+  );
 
   const wallet = wallets[0] ?? null;
 
