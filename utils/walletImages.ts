@@ -21,9 +21,12 @@ type ThemeMap = Record<ThemeId, WalletMap>;
 const WALLET_IMAGES: ThemeMap = {
   waiwai: {
     gamaguchi: {
-      normal: null, // require('../assets/images/wallets/waiwai/gamaguchi-normal.png')
-      happy:  null, // require('../assets/images/wallets/waiwai/gamaguchi-happy.png')
-      sad:    null, // require('../assets/images/wallets/waiwai/gamaguchi-sad.png')
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      normal: require('../assets/images/wallets/waiwai/gamaguchi-normal.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      happy:  require('../assets/images/wallets/waiwai/gamaguchi-happy.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      sad:    require('../assets/images/wallets/waiwai/gamaguchi-sad.png'),
     },
     kinchaku: {
       normal: null,
