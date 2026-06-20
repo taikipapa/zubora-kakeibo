@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "zubora-kakeibo",
+    "name": "ズボラ家計簿",
     "slug": "zubora-kakeibo",
     "version": "1.0.0",
     "scheme": "zuborakakeibo",
@@ -9,9 +9,12 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.daitaina.zubora-kakeibo"
+      "bundleIdentifier": "com.daitaina.zubora-kakeibo",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.taikipapa.zuborakakeibo",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,6 +28,15 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FDF6EC",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
       [
         "react-native-google-mobile-ads",
         {
