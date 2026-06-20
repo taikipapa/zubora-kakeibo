@@ -24,6 +24,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { addTransaction } from '../domain/transaction/transactionService';
 import { getAllWallets } from '../domain/wallet/walletRepository';
 import { deleteWallet as deleteWalletService, reorderWallets } from '../domain/wallet/walletService';
+import { maybeShowInterstitial } from '../services/ads/InterstitialAdService';
 import { showRewardedAd } from '../services/ads/RewardAdService';
 import type { WalletMood } from '../utils/walletImages';
 import type { TransactionType } from '../types/transaction';
@@ -121,6 +122,7 @@ export default function HomeScreen() {
       setAmount(0);
       setTransactionType(null);
       moodTimerRef.current = setTimeout(() => setDisplayMood('normal'), MOOD_RESET_DELAY_MS);
+      maybeShowInterstitial(); // show interstitial ad on every Nth save, if loaded and interval elapsed
     } catch (err) {
       setDisplayMood('normal');
       setErrorMessage(err instanceof Error ? err.message : '保存に失敗しました');
