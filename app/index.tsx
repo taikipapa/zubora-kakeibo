@@ -283,10 +283,21 @@ export default function HomeScreen() {
 
         {/* Amount display */}
         <View style={styles.amountDisplay}>
-          <Text style={styles.amountText}>
+          <Text style={[
+            styles.amountText,
+            walletThemeId === 'host' && {
+              color: '#FFD700',
+              textShadowColor: 'rgba(0,0,0,0.9)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 4,
+            },
+          ]}>
             {amount > 0 ? amount.toLocaleString() : '0'}
           </Text>
-          <Text style={styles.amountUnit}>円</Text>
+          <Text style={[
+            styles.amountUnit,
+            walletThemeId === 'host' && { color: '#FFD700' },
+          ]}>円</Text>
         </View>
 
         {/* Error message */}
