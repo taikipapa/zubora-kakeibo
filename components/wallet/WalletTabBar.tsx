@@ -40,6 +40,7 @@ export function WalletTabBar({
 }: Props) {
   const [localOrder, setLocalOrder] = useState<Wallet[]>(wallets);
   const [activeTabIdx, setActiveTabIdx] = useState(-1);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
 
   const activeTabIdxRef = useRef(-1);
   activeTabIdxRef.current = activeTabIdx;
@@ -138,6 +139,7 @@ export function WalletTabBar({
       phaseRef.current = 'idle';
       activeIdxRef.current = -1;
       setActiveTabIdx(-1);
+      setScrollEnabled(true);
     },
 
     onPanResponderTerminate: () => {
@@ -145,6 +147,7 @@ export function WalletTabBar({
       phaseRef.current = 'idle';
       activeIdxRef.current = -1;
       setActiveTabIdx(-1);
+      setScrollEnabled(true);
     },
   }), []);
 
@@ -155,6 +158,7 @@ export function WalletTabBar({
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.tabScroll}
+        scrollEnabled={scrollEnabled}
         scrollEventThrottle={16}
         onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.x; }}
         onScrollBeginDrag={() => {
@@ -182,6 +186,7 @@ export function WalletTabBar({
               phaseRef.current = 'grabbed';
               triggerLongPressHaptic();
               setActiveTabIdx(activeIdxRef.current);
+              setScrollEnabled(false); // Disable scroll so PanResponder can claim drag
             }, LONG_PRESS_MS);
           }}
           onTouchEnd={() => {
@@ -200,6 +205,7 @@ export function WalletTabBar({
               phaseRef.current = 'idle';
               activeIdxRef.current = -1;
               setActiveTabIdx(-1);
+              setScrollEnabled(true);
             }
             // 'dragging' release is handled by PanResponder's onPanResponderRelease
           }}
@@ -209,6 +215,7 @@ export function WalletTabBar({
               phaseRef.current = 'idle';
               activeIdxRef.current = -1;
               setActiveTabIdx(-1);
+              setScrollEnabled(true);
             }
           }}
           {...panResponder.panHandlers}

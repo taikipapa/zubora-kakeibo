@@ -12,6 +12,7 @@ import {
 
 import { NumPad } from '../components/transaction/NumPad';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
+import { HomeBannerAd } from '../components/common/HomeBannerAd';
 import { WalletHistorySheet } from '../components/history/WalletHistorySheet';
 import { AddWalletModal } from '../components/wallet/AddWalletModal';
 import { WalletCard } from '../components/wallet/WalletCard';
@@ -285,8 +286,7 @@ export default function HomeScreen() {
         {/* Custom numpad */}
         <NumPad onPress={handleNumPadKey} />
 
-        {/* Banner ad placeholder — reserve space for future AdMob banner (50px standard height) */}
-        <View style={styles.bannerPlaceholder} />
+        <HomeBannerAd />
       </View>
     </SafeAreaView>
   );
@@ -354,8 +354,5 @@ const styles = StyleSheet.create({
     color: '#E53935',
     fontWeight: '600',
     textAlign: 'right',
-  },
-  bannerPlaceholder: {
-    height: 60, // AdMob standard banner (320×50) + safe margin
   },
 });
