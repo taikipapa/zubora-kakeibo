@@ -109,7 +109,7 @@ export default function HomeScreen() {
     // Instantly show mood and fire animation BEFORE DB
     const savedMood: WalletMood = type === 'income' ? 'happy' : 'sad';
     setDisplayMood(savedMood);
-    moneyAnimRef.current?.play(type);
+    moneyAnimRef.current?.play(type, amount);
     if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
 
     setSaving(true);
@@ -265,7 +265,7 @@ export default function HomeScreen() {
             mood={displayMood}
             themeId={wallet.themeId}
           />
-          <MoneyAnimation ref={moneyAnimRef} />
+          <MoneyAnimation ref={moneyAnimRef} themeId={walletThemeId} />
         </Pressable>
 
         {/* 入れる / 出す (dimmed when amount is 0) */}
