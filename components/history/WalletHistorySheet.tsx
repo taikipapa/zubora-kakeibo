@@ -42,7 +42,7 @@ export function WalletHistorySheet({ visible, wallet, onClose, onTransactionDele
       .catch(console.error)
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [visible, wallet]);
+  }, [visible, wallet?.id]);
 
   function handleDelete(transactionId: string) {
     Alert.alert(
