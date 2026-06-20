@@ -158,13 +158,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   typeScroll: {
-    marginRight: 84,
     marginBottom: 20,
   },
   typeRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingRight: 24,
+    paddingRight: 12,
   },
   typeButton: {
     width: 86,
