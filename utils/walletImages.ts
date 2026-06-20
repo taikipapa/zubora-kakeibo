@@ -119,6 +119,31 @@ const WALLET_IMAGES: ThemeMap = {
       sad:    null,
     },
   },
+  host: {
+    gamaguchi: {
+      normal: null,
+      happy:  null,
+      sad:    null,
+    },
+    kinchaku: {
+      normal: null,
+      happy:  null,
+      sad:    null,
+    },
+    long: {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      normal: require('../assets/images/wallets/host/long-normal.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      happy:  require('../assets/images/wallets/host/long-happy.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      sad:    require('../assets/images/wallets/host/long-sad.png'),
+    },
+    folding: {
+      normal: null,
+      happy:  null,
+      sad:    null,
+    },
+  },
 };
 
 /** Returns the image source for the given theme/type/mood, or null if not yet available. */

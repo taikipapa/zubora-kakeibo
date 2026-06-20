@@ -74,6 +74,8 @@ const COIN_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
   princess: require('../../assets/images/money/princess-coin.png'),
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   prince:   require('../../assets/images/money/prince-coin.png'),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  host:     require('../../assets/images/money/host-coin.png'),
 };
 
 const BILL_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
@@ -85,6 +87,8 @@ const BILL_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
   princess: require('../../assets/images/money/princess-bill.png'),
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   prince:   require('../../assets/images/money/prince-bill.png'),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  host:     require('../../assets/images/money/host-bill.png'),
 };
 
 let playCounter = 0;

@@ -62,4 +62,16 @@ export const themes: Record<ThemeId, Theme> = {
     textMid: '#4A6080',
     card: 'rgba(255,255,255,0.8)',
   },
+  host: {
+    id: 'host',
+    background: '#1A1A2E',
+    primary: '#C9A84C',
+    saveButton: '#C9A84C',
+    balanceBanner: '#2C2C54',
+    incomeColor: '#C9A84C',
+    expenseColor: '#E06C75',
+    textDark: '#F0E6FF',
+    textMid: '#A89BC2',
+    card: 'rgba(255,255,255,0.08)',
+  },
 };

@@ -12,6 +12,7 @@ export const WALLET_DESIGNS: WalletDesign[] = [
   { label: 'ピュア',     walletType: 'gamaguchi', themeId: 'hokkori' },
   { label: 'プリンセス', walletType: 'gamaguchi', themeId: 'princess' },
   { label: '王子',       walletType: 'long',      themeId: 'prince' },
+  { label: 'ホスト',     walletType: 'long',      themeId: 'host' },
 ];
 
 export const DEFAULT_WALLET_DESIGN: WalletDesign = WALLET_DESIGNS[0];
