@@ -4,7 +4,7 @@
 
 ## リリース前チェック
 
-- プライバシーポリシーURL: 未定。Google Play Console / App Store Connect へ提出する前に公開URLを用意して登録する。
+- プライバシーポリシー: `docs/privacy-policy.html` に作成済み。公開URLを用意して Google Play Console / App Store Connect に登録する。
 - AdMob本番ID: Android 本番IDは設定済み。iOS 本番IDは未設定（差し替え待ち）。
 - 現在の広告ID状態:
   - `app.json` の `androidAppId`: Android 本番 App ID 設定済み。
