@@ -232,6 +232,7 @@ export default function HomeScreen() {
         visible={showHistorySheet}
         wallet={wallet}
         onClose={() => setShowHistorySheet(false)}
+        onTransactionDeleted={loadData}
       />
 
       <View style={styles.screen}>

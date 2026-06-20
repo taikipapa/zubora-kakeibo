@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -12,6 +13,7 @@ import {
 
 import { TransactionListItem } from './TransactionListItem';
 import { getTransactionsByWalletId } from '../../domain/transaction/transactionRepository';
+import { removeTransaction } from '../../domain/transaction/transactionService';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Transaction } from '../../types/transaction';
 import type { Wallet } from '../../types/wallet';
@@ -20,9 +22,10 @@ interface Props {
   visible: boolean;
   wallet: Wallet | null;
   onClose: () => void;
+  onTransactionDeleted?: () => Promise<void> | void;
 }
 
-export function WalletHistorySheet({ visible, wallet, onClose }: Props) {
+export function WalletHistorySheet({ visible, wallet, onClose, onTransactionDeleted }: Props) {
   const { theme } = useTheme();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -40,6 +43,32 @@ export function WalletHistorySheet({ visible, wallet, onClose }: Props) {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [visible, wallet]);
+
+  function handleDelete(transactionId: string) {
+    Alert.alert(
+      'この履歴を削除しますか？',
+      '削除すると財布の残高も元に戻ります。',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '削除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeTransaction(transactionId);
+              if (wallet) {
+                const updated = await getTransactionsByWalletId(wallet.id);
+                setTransactions(updated);
+              }
+              await onTransactionDeleted?.();
+            } catch (err) {
+              Alert.alert('エラー', err instanceof Error ? err.message : '削除に失敗しました');
+            }
+          },
+        },
+      ],
+    );
+  }
 
   return (
     <Modal
@@ -73,7 +102,10 @@ export function WalletHistorySheet({ visible, wallet, onClose }: Props) {
             data={transactions}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <TransactionListItem transaction={item} />
+              <TransactionListItem
+                transaction={item}
+                onDelete={() => handleDelete(item.id)}
+              />
             )}
             contentContainerStyle={
               transactions.length === 0
