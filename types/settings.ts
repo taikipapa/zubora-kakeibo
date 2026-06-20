@@ -1,4 +1,4 @@
-export type ThemeId = 'waiwai' | 'hokkori';
+export type ThemeId = 'waiwai' | 'hokkori' | 'princess';
 
 export interface Settings {
   theme: ThemeId;

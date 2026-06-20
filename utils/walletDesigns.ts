@@ -8,8 +8,9 @@ export interface WalletDesign {
 }
 
 export const WALLET_DESIGNS: WalletDesign[] = [
-  { label: 'わいわい がま口', walletType: 'gamaguchi', themeId: 'waiwai' },
-  { label: 'ほっこり がま口', walletType: 'gamaguchi', themeId: 'hokkori' },
+  { label: 'わいわい',   walletType: 'gamaguchi', themeId: 'waiwai' },
+  { label: 'ピュア',     walletType: 'gamaguchi', themeId: 'hokkori' },
+  { label: 'プリンセス', walletType: 'gamaguchi', themeId: 'princess' },
 ];
 
 export const DEFAULT_WALLET_DESIGN: WalletDesign = WALLET_DESIGNS[0];

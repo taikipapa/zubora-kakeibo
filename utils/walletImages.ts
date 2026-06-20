@@ -69,6 +69,31 @@ const WALLET_IMAGES: ThemeMap = {
       sad:    null,
     },
   },
+  princess: {
+    gamaguchi: {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      normal: require('../assets/images/wallets/princess/gamaguchi-normal.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      happy:  require('../assets/images/wallets/princess/gamaguchi-happy.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      sad:    require('../assets/images/wallets/princess/gamaguchi-sad.png'),
+    },
+    kinchaku: {
+      normal: null,
+      happy:  null,
+      sad:    null,
+    },
+    long: {
+      normal: null,
+      happy:  null,
+      sad:    null,
+    },
+    folding: {
+      normal: null,
+      happy:  null,
+      sad:    null,
+    },
+  },
 };
 
 /** Returns the image source for the given theme/type/mood, or null if not yet available. */

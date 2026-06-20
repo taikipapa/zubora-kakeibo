@@ -38,4 +38,16 @@ export const themes: Record<ThemeId, Theme> = {
     textMid: '#9E7B5B',
     card: 'rgba(255,255,255,0.65)',
   },
+  princess: {
+    id: 'princess',
+    background: '#EEF6FC',
+    primary: '#C9A84C',
+    saveButton: '#C9A84C',
+    balanceBanner: '#88BFDE',
+    incomeColor: '#4A90C4',
+    expenseColor: '#C47A8A',
+    textDark: '#2C3E5A',
+    textMid: '#7A90A8',
+    card: 'rgba(255,255,255,0.75)',
+  },
 };

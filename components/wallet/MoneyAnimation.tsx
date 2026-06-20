@@ -67,16 +67,20 @@ function resolveParticles(amount: number): ParticleKind[] {
 
 const COIN_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  waiwai:  require('../../assets/images/money/waiwai-coin.png'),
+  waiwai:   require('../../assets/images/money/waiwai-coin.png'),
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  hokkori: require('../../assets/images/money/hokkori-coin.png'),
+  hokkori:  require('../../assets/images/money/hokkori-coin.png'),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  princess: require('../../assets/images/money/princess-coin.png'),
 };
 
 const BILL_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  waiwai:  require('../../assets/images/money/waiwai-bill.png'),
+  waiwai:   require('../../assets/images/money/waiwai-bill.png'),
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  hokkori: require('../../assets/images/money/hokkori-bill.png'),
+  hokkori:  require('../../assets/images/money/hokkori-bill.png'),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  princess: require('../../assets/images/money/princess-bill.png'),
 };
 
 let playCounter = 0;
