@@ -12,6 +12,7 @@ import {
 
 import { NumPad } from '../components/transaction/NumPad';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
+import { WalletHistorySheet } from '../components/history/WalletHistorySheet';
 import { AddWalletModal } from '../components/wallet/AddWalletModal';
 import { WalletCard } from '../components/wallet/WalletCard';
 import { WalletTabBar } from '../components/wallet/WalletTabBar';
@@ -42,6 +43,7 @@ export default function HomeScreen() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showHistorySheet, setShowHistorySheet] = useState(false);
   const [displayMood, setDisplayMood] = useState<WalletMood>('normal');
   const moodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -226,6 +228,11 @@ export default function HomeScreen() {
         onClose={() => setShowAddModal(false)}
         onCreated={handleWalletCreated}
       />
+      <WalletHistorySheet
+        visible={showHistorySheet}
+        wallet={wallet}
+        onClose={() => setShowHistorySheet(false)}
+      />
 
       <View style={styles.screen}>
         {/* Wallet tab bar: drag to reorder, long press to delete */}
@@ -241,15 +248,19 @@ export default function HomeScreen() {
           onSettings={() => router.push('/settings')}
         />
 
-        {/* Wallet card: image + balance */}
-        <View style={styles.walletSection}>
+        {/* Wallet card: image + balance — tap to open history sheet */}
+        <Pressable
+          style={styles.walletSection}
+          onPress={() => setShowHistorySheet(true)}
+          disabled={saving}
+        >
           <WalletCard
             balance={wallet.balance}
             type={wallet.type}
             mood={displayMood}
             themeId={wallet.themeId}
           />
-        </View>
+        </Pressable>
 
         {/* 入れる / 出す (dimmed when amount is 0) */}
         <View style={[styles.toggleWrapper, !hasValidAmount && styles.toggleDisabled]}
