@@ -4,6 +4,7 @@ import {
   Image,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,8 +12,8 @@ import {
 } from 'react-native';
 
 import { createWallet } from '../../domain/wallet/walletService';
-import type { WalletType } from '../../types/wallet';
-import { getThemeIdForWalletType, getWalletImage } from '../../utils/walletImages';
+import { WALLET_DESIGNS, DEFAULT_WALLET_DESIGN, type WalletDesign } from '../../utils/walletDesigns';
+import { getWalletImage } from '../../utils/walletImages';
 
 interface Props {
   visible: boolean;
@@ -20,16 +21,9 @@ interface Props {
   onCreated: () => void;
 }
 
-const WALLET_TYPES: { value: WalletType; label: string; emoji: string }[] = [
-  { value: 'gamaguchi', label: 'がま口', emoji: '👛' },
-  { value: 'kinchaku', label: '巾着', emoji: '👜' },
-  { value: 'long', label: '長財布', emoji: '💼' },
-  { value: 'folding', label: '二つ折り', emoji: '👝' },
-];
-
 export function AddWalletModal({ visible, onCreated }: Props) {
   const [name, setName] = useState('');
-  const [type, setType] = useState<WalletType>('gamaguchi');
+  const [design, setDesign] = useState<WalletDesign>(DEFAULT_WALLET_DESIGN);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -39,9 +33,9 @@ export function AddWalletModal({ visible, onCreated }: Props) {
     }
     setSaving(true);
     try {
-      await createWallet(name.trim(), type);
+      await createWallet(name.trim(), design.walletType, design.themeId);
       setName('');
-      setType('gamaguchi');
+      setDesign(DEFAULT_WALLET_DESIGN);
       onCreated();
     } catch (err) {
       Alert.alert('エラー', err instanceof Error ? err.message : '財布を作成できませんでした');
@@ -74,30 +68,35 @@ export function AddWalletModal({ visible, onCreated }: Props) {
             autoFocus
           />
 
-          {/* 財布タイプ選択（タイプに紐づくテーマの normal 画像を表示） */}
+          {/* 財布デザイン選択 */}
           <Text style={styles.label}>財布を選ぶ</Text>
-          <View style={styles.typeRow}>
-            {WALLET_TYPES.map((t) => {
-              const themeId = getThemeIdForWalletType(t.value);
-              const image = getWalletImage(themeId, t.value, 'normal');
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.typeScroll}
+            contentContainerStyle={styles.typeRow}
+          >
+            {WALLET_DESIGNS.map((d) => {
+              const image = getWalletImage(d.themeId, d.walletType, 'normal');
+              const isSelected = d.themeId === design.themeId && d.walletType === design.walletType;
               return (
                 <Pressable
-                  key={t.value}
-                  style={[styles.typeButton, type === t.value && styles.typeButtonActive]}
-                  onPress={() => setType(t.value)}
+                  key={`${d.themeId}-${d.walletType}`}
+                  style={[styles.typeButton, isSelected && styles.typeButtonActive]}
+                  onPress={() => setDesign(d)}
                 >
                   {image ? (
                     <Image source={image} style={styles.typeImage} resizeMode="contain" />
                   ) : (
-                    <Text style={styles.typeEmoji}>{t.emoji}</Text>
+                    <Text style={styles.typeEmoji}>👛</Text>
                   )}
-                  <Text style={[styles.typeLabel, type === t.value && styles.typeLabelActive]}>
-                    {t.label}
+                  <Text style={[styles.typeLabel, isSelected && styles.typeLabelActive]}>
+                    {d.label}
                   </Text>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
 
           {/* 作成ボタンのみ（キャンセルなし） */}
           <Pressable
@@ -158,13 +157,17 @@ const styles = StyleSheet.create({
     color: '#3E2700',
     marginBottom: 14,
   },
-  typeRow: {
-    flexDirection: 'row',
-    gap: 6,
+  typeScroll: {
+    marginRight: 84,
     marginBottom: 20,
   },
+  typeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingRight: 24,
+  },
   typeButton: {
-    flex: 1,
+    width: 86,
     alignItems: 'center',
     paddingVertical: 6,
     borderRadius: 12,

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { Alert, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { themes } from '../../theme/themes';
 import type { Theme } from '../../theme/themes';
@@ -8,11 +8,8 @@ import type { Wallet } from '../../types/wallet';
 
 const LONG_PRESS_MS = 450;
 const DRAG_THRESHOLD_PX = 8;
-const CANCEL_BEFORE_GRAB_PX = 20;
 
-/** ホームアイコン長押しの「ポチッ」に相当する触覚。変更したいときはここだけ直す。 */
 function triggerLongPressHaptic() {
-  // Light: 軽め / Medium: 中くらい / Heavy: 強め
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 }
 
@@ -64,14 +61,13 @@ export function WalletTabBar({
   const phaseRef = useRef<GesturePhase>('idle');
   const activeIdxRef = useRef(-1);
 
-  // Tab layout positions relative to tabArea (populated by onLayout)
   const tabLayoutsRef = useRef<{ x: number; width: number }[]>([]);
 
-  // tabArea's absolute page-X position (used to convert pageX → local x)
   const tabAreaRef = useRef<View>(null);
   const tabAreaPageXRef = useRef(0);
+  // Track horizontal scroll offset to correct touch → local coordinate conversion
+  const scrollOffsetRef = useRef(0);
 
-  // Find nearest tab by x position relative to tabArea
   const findTargetIdxRef = useRef((x: number): number => {
     const layouts = tabLayoutsRef.current;
     if (layouts.length === 0) return 0;
@@ -104,42 +100,24 @@ export function WalletTabBar({
   });
 
   const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
+    // Don't claim on start — allows ScrollView to handle horizontal swipes
+    onStartShouldSetPanResponder: () => false,
+    // Only claim moves after long-press is confirmed (grabbed/dragging phase)
+    onMoveShouldSetPanResponder: () =>
+      phaseRef.current === 'grabbed' || phaseRef.current === 'dragging',
 
-    onPanResponderGrant: (e) => {
-      // Use pageX (absolute screen coordinate) minus the tabArea's page position.
-      // This gives the correct x relative to tabArea regardless of which child
-      // element React Native considers as the touch target for locationX.
-      const localX = e.nativeEvent.pageX - tabAreaPageXRef.current;
-      activeIdxRef.current = findTargetIdxRef.current(localX);
-      phaseRef.current = 'pressing';
-
-      longPressTimerRef.current = setTimeout(() => {
-        phaseRef.current = 'grabbed';
-        triggerLongPressHaptic();
-        setActiveTabIdx(activeIdxRef.current);
-      }, LONG_PRESS_MS);
+    onPanResponderGrant: () => {
+      // Granted during 'grabbed' phase when user starts dragging after long-press
+      // activeIdxRef.current already set from onTouchStart
     },
 
     onPanResponderMove: (e, gs) => {
-      const absDx = Math.abs(gs.dx);
-
-      if (phaseRef.current === 'pressing') {
-        if (absDx > CANCEL_BEFORE_GRAB_PX) {
-          if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
-          phaseRef.current = 'cancelled';
-        }
-        return;
-      }
-
       if (phaseRef.current === 'grabbed') {
-        if (absDx > DRAG_THRESHOLD_PX) phaseRef.current = 'dragging';
+        if (Math.abs(gs.dx) > DRAG_THRESHOLD_PX) phaseRef.current = 'dragging';
         return;
       }
-
       if (phaseRef.current === 'dragging') {
-        const localX = e.nativeEvent.pageX - tabAreaPageXRef.current;
+        const localX = e.nativeEvent.pageX - tabAreaPageXRef.current + scrollOffsetRef.current;
         const targetIdx = findTargetIdxRef.current(localX);
         if (targetIdx >= 0 && targetIdx !== activeIdxRef.current) {
           const newOrder = [...localOrderRef.current];
@@ -154,19 +132,9 @@ export function WalletTabBar({
 
     onPanResponderRelease: () => {
       if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
-
-      const phase = phaseRef.current;
-      const idx = activeIdxRef.current;
-
-      if (phase === 'pressing') {
-        const wallet = localOrderRef.current[idx];
-        if (wallet) callbacksRef.current.onSelect(wallet.id);
-      } else if (phase === 'grabbed') {
-        showDeleteDialogRef.current(idx);
-      } else if (phase === 'dragging') {
+      if (phaseRef.current === 'dragging') {
         callbacksRef.current.onReorder(localOrderRef.current);
       }
-
       phaseRef.current = 'idle';
       activeIdxRef.current = -1;
       setActiveTabIdx(-1);
@@ -182,55 +150,108 @@ export function WalletTabBar({
 
   return (
     <View style={styles.container}>
-      {/* Draggable tab area — measure pageX on layout for coordinate conversion */}
-      <View
-        ref={tabAreaRef}
-        style={styles.tabArea}
-        onLayout={() => {
-          tabAreaRef.current?.measure((_x, _y, _w, _h, pageX) => {
-            tabAreaPageXRef.current = pageX;
-          });
+      {/* Horizontally scrollable tab list — flex: 1 bounds it before + and settings buttons */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabScroll}
+        scrollEventThrottle={16}
+        onScroll={(e) => { scrollOffsetRef.current = e.nativeEvent.contentOffset.x; }}
+        onScrollBeginDrag={() => {
+          // User started scrolling — cancel any pending long-press
+          if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+          phaseRef.current = 'cancelled';
+          setActiveTabIdx(-1);
         }}
-        {...panResponder.panHandlers}
       >
-        {localOrder.map((w, i) => {
-          const isSelected = w.id === selectedWalletId;
-          const isActive = i === activeTabIdx;
-          const tabTheme = themes[w.themeId as keyof typeof themes] ?? themes.waiwai;
-          return (
-            <View
-              key={w.id}
-              style={[
-                styles.tab,
-                isSelected
-                  ? [styles.tabSelected, { borderColor: tabTheme.primary, backgroundColor: tabTheme.primary + '18' }]
-                  : styles.tabInactive,
-                isActive && styles.tabGrabbed,
-              ]}
-              onLayout={(e) => {
-                tabLayoutsRef.current[i] = {
-                  x: e.nativeEvent.layout.x,
-                  width: e.nativeEvent.layout.width,
-                };
-              }}
-            >
-              <Text
+        <View
+          ref={tabAreaRef}
+          style={styles.tabArea}
+          onLayout={() => {
+            tabAreaRef.current?.measure((_x, _y, _w, _h, pageX) => {
+              tabAreaPageXRef.current = pageX;
+            });
+          }}
+          onTouchStart={(e) => {
+            // Start long-press timer here since PanResponder no longer claims start
+            const localX = e.nativeEvent.pageX - tabAreaPageXRef.current + scrollOffsetRef.current;
+            activeIdxRef.current = findTargetIdxRef.current(localX);
+            phaseRef.current = 'pressing';
+            if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = setTimeout(() => {
+              phaseRef.current = 'grabbed';
+              triggerLongPressHaptic();
+              setActiveTabIdx(activeIdxRef.current);
+            }, LONG_PRESS_MS);
+          }}
+          onTouchEnd={() => {
+            const phase = phaseRef.current;
+            const idx = activeIdxRef.current;
+            if (phase === 'pressing') {
+              if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+              const wallet = localOrderRef.current[idx];
+              if (wallet) callbacksRef.current.onSelect(wallet.id);
+              phaseRef.current = 'idle';
+              activeIdxRef.current = -1;
+              setActiveTabIdx(-1);
+            } else if (phase === 'grabbed') {
+              if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+              showDeleteDialogRef.current(idx);
+              phaseRef.current = 'idle';
+              activeIdxRef.current = -1;
+              setActiveTabIdx(-1);
+            }
+            // 'dragging' release is handled by PanResponder's onPanResponderRelease
+          }}
+          onTouchCancel={() => {
+            if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+            if (phaseRef.current !== 'dragging') {
+              phaseRef.current = 'idle';
+              activeIdxRef.current = -1;
+              setActiveTabIdx(-1);
+            }
+          }}
+          {...panResponder.panHandlers}
+        >
+          {localOrder.map((w, i) => {
+            const isSelected = w.id === selectedWalletId;
+            const isActive = i === activeTabIdx;
+            const tabTheme = themes[w.themeId as keyof typeof themes] ?? themes.waiwai;
+            return (
+              <View
+                key={w.id}
                 style={[
-                  styles.tabText,
+                  styles.tab,
                   isSelected
-                    ? [styles.tabTextSelected, { color: tabTheme.primary }]
-                    : styles.tabTextInactive,
+                    ? [styles.tabSelected, { borderColor: tabTheme.primary, backgroundColor: tabTheme.primary + '18' }]
+                    : styles.tabInactive,
+                  isActive && styles.tabGrabbed,
                 ]}
-                numberOfLines={1}
+                onLayout={(e) => {
+                  tabLayoutsRef.current[i] = {
+                    x: e.nativeEvent.layout.x,
+                    width: e.nativeEvent.layout.width,
+                  };
+                }}
               >
-                {w.name}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
+                <Text
+                  style={[
+                    styles.tabText,
+                    isSelected
+                      ? [styles.tabTextSelected, { color: tabTheme.primary }]
+                      : styles.tabTextInactive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {w.name}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
 
-      {/* ＋ button: always rightmost, outside PanResponder */}
+      {/* ＋ button: always rightmost, outside ScrollView */}
       <Pressable
         style={[
           styles.addBtn,
@@ -261,10 +282,13 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     gap: 4,
   },
-  tabArea: {
+  tabScroll: {
     flex: 1,
+  },
+  tabArea: {
     flexDirection: 'row',
     gap: 6,
+    paddingRight: 8,
   },
   tab: {
     paddingHorizontal: 12,
@@ -294,7 +318,6 @@ const styles = StyleSheet.create({
   tabTextInactive: {
     color: 'rgba(93,58,0,0.45)',
   },
-  /* ＋ button — smaller than wallet tabs */
   addBtn: {
     paddingHorizontal: 8,
     paddingVertical: 5,

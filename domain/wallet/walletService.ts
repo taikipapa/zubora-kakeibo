@@ -1,7 +1,7 @@
 import { getDatabase } from '../../db/client';
 import { seedInitialWallet } from '../../db/seed';
 import { generateUUID } from '../../utils/uuid';
-import { getThemeIdForWalletType } from '../../utils/walletImages';
+import type { ThemeId } from '../../types/settings';
 import type { Wallet, WalletType } from '../../types/wallet';
 import { deleteAllTransactions, deleteTransactionsByWalletId } from '../transaction/transactionRepository';
 import {
@@ -15,7 +15,7 @@ import {
 const MAX_WALLETS = 5;
 const MIN_WALLETS = 1;
 
-export async function createWallet(name: string, type: WalletType): Promise<Wallet> {
+export async function createWallet(name: string, type: WalletType, themeId: ThemeId): Promise<Wallet> {
   if (!name.trim()) {
     throw new Error('財布名を入力してください');
   }
@@ -27,7 +27,7 @@ export async function createWallet(name: string, type: WalletType): Promise<Wall
     id: generateUUID(),
     name: name.trim(),
     type,
-    themeId: getThemeIdForWalletType(type),
+    themeId,
     balance: 0,
     createdAt: new Date().toISOString(),
   };
