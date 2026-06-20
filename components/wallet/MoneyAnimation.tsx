@@ -72,6 +72,8 @@ const COIN_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
   hokkori:  require('../../assets/images/money/hokkori-coin.png'),
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   princess: require('../../assets/images/money/princess-coin.png'),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  prince:   require('../../assets/images/money/prince-coin.png'),
 };
 
 const BILL_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
@@ -81,6 +83,8 @@ const BILL_IMAGES: Record<ThemeId, ImageSourcePropType | null> = {
   hokkori:  require('../../assets/images/money/hokkori-bill.png'),
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   princess: require('../../assets/images/money/princess-bill.png'),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  prince:   require('../../assets/images/money/prince-bill.png'),
 };
 
 let playCounter = 0;

@@ -50,4 +50,16 @@ export const themes: Record<ThemeId, Theme> = {
     textMid: '#7A90A8',
     card: 'rgba(255,255,255,0.75)',
   },
+  prince: {
+    id: 'prince',
+    background: '#F0F5FF',
+    primary: '#B8962E',
+    saveButton: '#1A3A6B',
+    balanceBanner: '#1A3A6B',
+    incomeColor: '#1A5276',
+    expenseColor: '#922B21',
+    textDark: '#0D1F3C',
+    textMid: '#4A6080',
+    card: 'rgba(255,255,255,0.8)',
+  },
 };
