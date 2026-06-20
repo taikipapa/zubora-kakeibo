@@ -175,7 +175,9 @@ export function WalletTabBar({
           style={styles.tabArea}
           onLayout={() => {
             tabAreaRef.current?.measure((_x, _y, _w, _h, pageX) => {
-              tabAreaPageXRef.current = pageX;
+              // Normalize to scroll=0 position so localX calculation stays correct
+              // even when onLayout fires while the ScrollView is scrolled.
+              tabAreaPageXRef.current = pageX + scrollOffsetRef.current;
             });
           }}
           onTouchStart={(e) => {

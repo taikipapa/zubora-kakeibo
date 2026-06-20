@@ -136,13 +136,15 @@ export default function HomeScreen() {
     }
   }
 
-  async function handleWalletCreated() {
+  async function handleWalletCreated(newWalletId: string) {
     setShowAddModal(false);
     const updated = await getAllWallets();
-    const newIndex = updated.length - 1;
     setWallets(updated);
-    setCurrentIndex(newIndex);
-    currentIndexRef.current = newIndex;
+    // Locate the newly created wallet by ID regardless of sort order
+    const newIdx = updated.findIndex(w => w.id === newWalletId);
+    const idx = newIdx >= 0 ? newIdx : updated.length - 1;
+    setCurrentIndex(idx);
+    currentIndexRef.current = idx;
   }
 
   async function handleDeleteWalletFromTab(w: Wallet) {

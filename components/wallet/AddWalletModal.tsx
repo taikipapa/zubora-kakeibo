@@ -18,7 +18,7 @@ import { getWalletImage } from '../../utils/walletImages';
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (walletId: string) => void;
 }
 
 export function AddWalletModal({ visible, onCreated }: Props) {
@@ -33,10 +33,10 @@ export function AddWalletModal({ visible, onCreated }: Props) {
     }
     setSaving(true);
     try {
-      await createWallet(name.trim(), design.walletType, design.themeId);
+      const newWallet = await createWallet(name.trim(), design.walletType, design.themeId);
       setName('');
       setDesign(DEFAULT_WALLET_DESIGN);
-      onCreated();
+      onCreated(newWallet.id);
     } catch (err) {
       Alert.alert('エラー', err instanceof Error ? err.message : '財布を作成できませんでした');
     } finally {
