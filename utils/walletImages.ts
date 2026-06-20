@@ -46,9 +46,12 @@ const WALLET_IMAGES: ThemeMap = {
   },
   hokkori: {
     gamaguchi: {
-      normal: null, // require('../assets/images/wallets/hokkori/gamaguchi-normal.png')
-      happy:  null, // require('../assets/images/wallets/hokkori/gamaguchi-happy.png')
-      sad:    null, // require('../assets/images/wallets/hokkori/gamaguchi-sad.png')
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      normal: require('../assets/images/wallets/hokkori/gamaguchi-normal.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      happy:  require('../assets/images/wallets/hokkori/gamaguchi-happy.png'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      sad:    require('../assets/images/wallets/hokkori/gamaguchi-sad.png'),
     },
     kinchaku: {
       normal: null,
