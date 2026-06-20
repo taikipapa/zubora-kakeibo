@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const SETTINGS_ICON = require('../../assets/images/settings/settings-gear.png');
 
 import { themes } from '../../theme/themes';
 import type { Theme } from '../../theme/themes';
@@ -273,7 +275,7 @@ export function WalletTabBar({
 
       {/* Settings */}
       <Pressable style={styles.settingsButton} onPress={onSettings}>
-        <Text style={styles.settingsButtonText}>⚙</Text>
+        <Image source={SETTINGS_ICON} style={styles.settingsIcon} resizeMode="contain" />
       </Pressable>
     </View>
   );
@@ -350,16 +352,14 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   settingsButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  settingsButtonText: {
-    fontSize: 18,
-    color: '#5D3A00',
+  settingsIcon: {
+    width: 34,
+    height: 34,
   },
 });
