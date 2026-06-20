@@ -38,7 +38,7 @@ export function TransactionListItem({ transaction, onDelete }: Props) {
       </View>
       {onDelete && (
         <Pressable style={styles.deleteButton} onPress={onDelete} hitSlop={8}>
-          <Text style={styles.deleteText}>✕</Text>
+          <Text style={styles.deleteText}>取消</Text>
         </Pressable>
       )}
     </View>
@@ -92,15 +92,17 @@ const styles = StyleSheet.create({
     color: '#C62828',
   },
   deleteButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(229,57,53,0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(229,57,53,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(229,57,53,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   deleteText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#E53935',
     fontWeight: '700',
   },

@@ -54,12 +54,12 @@ export default function HistoryScreen() {
 
   function handleDelete(id: string) {
     Alert.alert(
-      'この履歴を削除しますか？',
-      '削除すると残高も元に戻ります。',
+      'この記録を取り消しますか？',
+      'この入出金記録を取り消すと、財布の残高も元に戻ります。',
       [
         { text: 'キャンセル', style: 'cancel' },
         {
-          text: '削除',
+          text: '取り消す',
           style: 'destructive',
           onPress: async () => {
             try {
