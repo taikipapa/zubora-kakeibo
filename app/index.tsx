@@ -14,6 +14,7 @@ import { NumPad } from '../components/transaction/NumPad';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
 import { HomeBannerAd } from '../components/common/HomeBannerAd';
 import { WalletHistorySheet } from '../components/history/WalletHistorySheet';
+import { MoneyAnimation, type MoneyAnimationHandle } from '../components/wallet/MoneyAnimation';
 import { AddWalletModal } from '../components/wallet/AddWalletModal';
 import { WalletCard } from '../components/wallet/WalletCard';
 import { WalletTabBar } from '../components/wallet/WalletTabBar';
@@ -47,6 +48,7 @@ export default function HomeScreen() {
   const [showHistorySheet, setShowHistorySheet] = useState(false);
   const [displayMood, setDisplayMood] = useState<WalletMood>('normal');
   const moodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moneyAnimRef = useRef<MoneyAnimationHandle>(null);
 
   useEffect(() => {
     return () => { if (moodTimerRef.current) clearTimeout(moodTimerRef.current); };
@@ -104,9 +106,10 @@ export default function HomeScreen() {
     setTransactionType(type);
     if (!hasValidAmount || !wallet || saving) return;
 
-    // Instantly show mood BEFORE DB
+    // Instantly show mood and fire animation BEFORE DB
     const savedMood: WalletMood = type === 'income' ? 'happy' : 'sad';
     setDisplayMood(savedMood);
+    moneyAnimRef.current?.play(type);
     if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
 
     setSaving(true);
@@ -262,6 +265,7 @@ export default function HomeScreen() {
             mood={displayMood}
             themeId={wallet.themeId}
           />
+          <MoneyAnimation ref={moneyAnimRef} />
         </Pressable>
 
         {/* 入れる / 出す (dimmed when amount is 0) */}
