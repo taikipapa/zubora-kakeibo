@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import {
   AdEventType,
   InterstitialAd,
@@ -6,7 +7,10 @@ import {
 
 const UNIT_ID = __DEV__
   ? TestIds.INTERSTITIAL
-  : 'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY'; // TODO: replace with production interstitial unit ID
+  : Platform.select({
+      android: 'ca-app-pub-2833241675946579/5834489608',
+      ios: TestIds.INTERSTITIAL, // TODO: replace with iOS production interstitial unit ID
+    }) ?? TestIds.INTERSTITIAL;
 
 const RECORD_INTERVAL = 3;                     // show every N records
 const TIME_INTERVAL_MS = 3 * 60 * 1000;        // at least 3 minutes between shows

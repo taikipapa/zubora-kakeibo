@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import {
   AdEventType,
   RewardedAd,
@@ -7,7 +8,10 @@ import {
 
 const AD_UNIT_ID = __DEV__
   ? TestIds.REWARDED
-  : 'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY'; // TODO: replace with production ad unit ID
+  : Platform.select({
+      android: 'ca-app-pub-2833241675946579/7864500969',
+      ios: TestIds.REWARDED, // TODO: replace with iOS production rewarded unit ID
+    }) ?? TestIds.REWARDED;
 
 /**
  * Load and show a rewarded ad.

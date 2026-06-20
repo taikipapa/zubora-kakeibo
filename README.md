@@ -5,10 +5,12 @@
 ## リリース前チェック
 
 - プライバシーポリシーURL: 未定。Google Play Console / App Store Connect へ提出する前に公開URLを用意して登録する。
-- AdMob本番ID: 本番 App ID / 広告ユニットID は未設定。本番ID差し替え待ち。
+- AdMob本番ID: Android 本番IDは設定済み。iOS 本番IDは未設定（差し替え待ち）。
 - 現在の広告ID状態:
-  - `app.json` の `react-native-google-mobile-ads` は Google のテスト App ID のまま。
-  - バナー / インタースティシャル / リワード広告ユニットIDは placeholder のまま。
+  - `app.json` の `androidAppId`: Android 本番 App ID 設定済み。
+  - `app.json` の `iosAppId`: Google テスト App ID のまま（iOS AdMob ID は未設定）。
+  - バナー / インタースティシャル / リワード広告ユニットID: Android 本番ID 設定済み。iOS は `TestIds.*` のまま（iOS AdMob 広告ユニットID は未設定）。
+  - iOS 本番リリース前に `app.json` の `iosAppId` と各広告サービスの iOS 向け unit ID を差し替えること。
 - `expo-splash-screen`: `app.json` に設定済み。Expo SDK 56 の推奨 config plugin 形式を使うため、ネイティブビルド前に依存関係に `expo-splash-screen` が入っているか確認する。
 
 ## ストア申告メモ
