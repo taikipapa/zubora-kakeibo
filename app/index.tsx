@@ -30,7 +30,7 @@ import type { WalletMood } from '../utils/walletImages';
 import type { TransactionType } from '../types/transaction';
 import type { Wallet } from '../types/wallet';
 
-const MAX_WALLETS = 5;
+const MAX_WALLETS = 10;
 const MAX_AMOUNT = 9999999;
 const MOOD_RESET_DELAY_MS = 2000;
 

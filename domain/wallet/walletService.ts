@@ -12,7 +12,7 @@ import {
   updateWalletsDisplayOrder,
 } from './walletRepository';
 
-const MAX_WALLETS = 5;
+const MAX_WALLETS = 10;
 const MIN_WALLETS = 1;
 
 export async function createWallet(name: string, type: WalletType, themeId: ThemeId): Promise<Wallet> {
