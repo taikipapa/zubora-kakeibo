@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, PanResponder, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { Alert, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { themes } from '../../theme/themes';
 import type { Theme } from '../../theme/themes';
 import type { Wallet } from '../../types/wallet';
 
-/** Long press must hold this long (ms) before vibrating / entering grab state */
 const LONG_PRESS_MS = 450;
-/** Movement (px) DURING drag phase that triggers actual reorder swap */
 const DRAG_THRESHOLD_PX = 8;
-/** Movement (px) BEFORE long press fires that cancels the long press entirely */
 const CANCEL_BEFORE_GRAB_PX = 20;
+
+/** ホームアイコン長押しの「ポチッ」に相当する触覚。変更したいときはここだけ直す。 */
+function triggerLongPressHaptic() {
+  // Light: 軽め / Medium: 中くらい / Heavy: 強め
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+}
 
 type GesturePhase = 'idle' | 'pressing' | 'grabbed' | 'dragging' | 'cancelled';
 
@@ -38,22 +42,19 @@ export function WalletTabBar({
   onSettings,
 }: Props) {
   const [localOrder, setLocalOrder] = useState<Wallet[]>(wallets);
-  const [activeTabIdx, setActiveTabIdx] = useState(-1); // grabbed or dragging
+  const [activeTabIdx, setActiveTabIdx] = useState(-1);
 
-  // Sync localOrder when wallets prop changes, but only when not interacting
   const activeTabIdxRef = useRef(-1);
   activeTabIdxRef.current = activeTabIdx;
   useEffect(() => {
     if (activeTabIdxRef.current === -1) setLocalOrder(wallets);
   }, [wallets]);
 
-  // Cleanup timer on unmount
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     return () => { if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current); };
   }, []);
 
-  // Refs used inside useMemo PanResponder (stable, avoids stale closures)
   const localOrderRef = useRef<Wallet[]>(localOrder);
   localOrderRef.current = localOrder;
 
@@ -62,9 +63,15 @@ export function WalletTabBar({
 
   const phaseRef = useRef<GesturePhase>('idle');
   const activeIdxRef = useRef(-1);
+
+  // Tab layout positions relative to tabArea (populated by onLayout)
   const tabLayoutsRef = useRef<{ x: number; width: number }[]>([]);
 
-  // Stable helper: find nearest tab center to touch x position
+  // tabArea's absolute page-X position (used to convert pageX → local x)
+  const tabAreaRef = useRef<View>(null);
+  const tabAreaPageXRef = useRef(0);
+
+  // Find nearest tab by x position relative to tabArea
   const findTargetIdxRef = useRef((x: number): number => {
     const layouts = tabLayoutsRef.current;
     if (layouts.length === 0) return 0;
@@ -79,7 +86,6 @@ export function WalletTabBar({
     return closest;
   });
 
-  // Stable helper: show delete alert (reads current refs at call time)
   const showDeleteDialogRef = useRef((idx: number) => {
     const wallet = localOrderRef.current[idx];
     if (!wallet) return;
@@ -102,14 +108,16 @@ export function WalletTabBar({
     onMoveShouldSetPanResponder: () => true,
 
     onPanResponderGrant: (e) => {
-      const x = e.nativeEvent.locationX;
-      activeIdxRef.current = findTargetIdxRef.current(x);
+      // Use pageX (absolute screen coordinate) minus the tabArea's page position.
+      // This gives the correct x relative to tabArea regardless of which child
+      // element React Native considers as the touch target for locationX.
+      const localX = e.nativeEvent.pageX - tabAreaPageXRef.current;
+      activeIdxRef.current = findTargetIdxRef.current(localX);
       phaseRef.current = 'pressing';
 
-      // Start long press timer: vibrate + enter grab state on success
       longPressTimerRef.current = setTimeout(() => {
         phaseRef.current = 'grabbed';
-        Vibration.vibrate(30);
+        triggerLongPressHaptic();
         setActiveTabIdx(activeIdxRef.current);
       }, LONG_PRESS_MS);
     },
@@ -117,7 +125,6 @@ export function WalletTabBar({
     onPanResponderMove: (e, gs) => {
       const absDx = Math.abs(gs.dx);
 
-      // PRESSING: if user moves too much before long press fires → cancel
       if (phaseRef.current === 'pressing') {
         if (absDx > CANCEL_BEFORE_GRAB_PX) {
           if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
@@ -126,16 +133,14 @@ export function WalletTabBar({
         return;
       }
 
-      // GRABBED: transition to dragging once movement threshold is crossed
       if (phaseRef.current === 'grabbed') {
         if (absDx > DRAG_THRESHOLD_PX) phaseRef.current = 'dragging';
         return;
       }
 
-      // DRAGGING: update order based on finger position
       if (phaseRef.current === 'dragging') {
-        const x = e.nativeEvent.locationX;
-        const targetIdx = findTargetIdxRef.current(x);
+        const localX = e.nativeEvent.pageX - tabAreaPageXRef.current;
+        const targetIdx = findTargetIdxRef.current(localX);
         if (targetIdx >= 0 && targetIdx !== activeIdxRef.current) {
           const newOrder = [...localOrderRef.current];
           const [removed] = newOrder.splice(activeIdxRef.current, 1);
@@ -154,17 +159,13 @@ export function WalletTabBar({
       const idx = activeIdxRef.current;
 
       if (phase === 'pressing') {
-        // Plain tap → select wallet
         const wallet = localOrderRef.current[idx];
         if (wallet) callbacksRef.current.onSelect(wallet.id);
       } else if (phase === 'grabbed') {
-        // Long pressed, no movement → delete confirmation
         showDeleteDialogRef.current(idx);
       } else if (phase === 'dragging') {
-        // Drag released → commit reorder
         callbacksRef.current.onReorder(localOrderRef.current);
       }
-      // 'cancelled' → do nothing
 
       phaseRef.current = 'idle';
       activeIdxRef.current = -1;
@@ -177,12 +178,21 @@ export function WalletTabBar({
       activeIdxRef.current = -1;
       setActiveTabIdx(-1);
     },
-  }), []); // Stable — all mutable state accessed via refs
+  }), []);
 
   return (
     <View style={styles.container}>
-      {/* Draggable tab area (PanResponder covers this View only) */}
-      <View style={styles.tabArea} {...panResponder.panHandlers}>
+      {/* Draggable tab area — measure pageX on layout for coordinate conversion */}
+      <View
+        ref={tabAreaRef}
+        style={styles.tabArea}
+        onLayout={() => {
+          tabAreaRef.current?.measure((_x, _y, _w, _h, pageX) => {
+            tabAreaPageXRef.current = pageX;
+          });
+        }}
+        {...panResponder.panHandlers}
+      >
         {localOrder.map((w, i) => {
           const isSelected = w.id === selectedWalletId;
           const isActive = i === activeTabIdx;
@@ -220,17 +230,17 @@ export function WalletTabBar({
         })}
       </View>
 
-      {/* ＋ button: always rightmost, outside PanResponder, never draggable */}
+      {/* ＋ button: always rightmost, outside PanResponder */}
       <Pressable
         style={[
-          styles.tab,
+          styles.addBtn,
           isAtLimit
-            ? styles.tabAddDisabled
-            : [styles.tabAdd, { borderColor: currentTheme.primary }],
+            ? styles.addBtnDisabled
+            : [styles.addBtnActive, { borderColor: currentTheme.primary }],
         ]}
         onPress={onAdd}
       >
-        <Text style={[styles.tabAddText, !isAtLimit && { color: currentTheme.primary }]}>＋</Text>
+        <Text style={[styles.addBtnText, !isAtLimit && { color: currentTheme.primary }]}>＋</Text>
       </Pressable>
 
       {/* Settings */}
@@ -257,11 +267,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 2,
-    minWidth: 60,
+    minWidth: 56,
     maxWidth: 110,
   },
   tabSelected: {},
@@ -270,7 +280,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(141,110,0,0.2)',
   },
   tabGrabbed: {
-    opacity: 0.65,
+    opacity: 0.6,
     transform: [{ scale: 1.06 }],
   },
   tabText: {
@@ -284,25 +294,30 @@ const styles = StyleSheet.create({
   tabTextInactive: {
     color: 'rgba(93,58,0,0.45)',
   },
-  tabAdd: {
+  /* ＋ button — smaller than wallet tabs */
+  addBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 16,
     borderWidth: 1.5,
+    minWidth: 30,
+    maxWidth: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addBtnActive: {
     backgroundColor: 'transparent',
-    minWidth: 36,
-    maxWidth: 36,
-    paddingHorizontal: 8,
   },
-  tabAddDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+  addBtnDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderColor: 'rgba(200,160,0,0.2)',
-    minWidth: 36,
-    maxWidth: 36,
-    paddingHorizontal: 8,
   },
-  tabAddText: {
-    fontSize: 16,
+  addBtnText: {
+    fontSize: 14,
     fontWeight: '700',
     color: 'rgba(141,110,0,0.4)',
     textAlign: 'center',
+    lineHeight: 16,
   },
   settingsButton: {
     width: 34,
