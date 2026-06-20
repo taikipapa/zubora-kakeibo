@@ -115,7 +115,7 @@ export function WalletHistorySheet({ visible, wallet, onClose, onTransactionDele
             ListEmptyComponent={
               <View style={styles.centered}>
                 <Text style={[styles.emptyText, { color: theme.textMid }]}>
-                  まだ履歴がありません
+                  まだ記録がありません
                 </Text>
               </View>
             }

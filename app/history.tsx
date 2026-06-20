@@ -120,7 +120,7 @@ export default function HistoryScreen() {
           contentContainerStyle={transactions.length === 0 ? styles.emptyContainer : [styles.listContent, { backgroundColor: theme.card }]}
           ListEmptyComponent={
             <View style={styles.centered}>
-              <Text style={[styles.emptyText, { color: theme.textMid }]}>まだ履歴がありません</Text>
+              <Text style={[styles.emptyText, { color: theme.textMid }]}>まだ記録がありません</Text>
             </View>
           }
           ItemSeparatorComponent={() => null}

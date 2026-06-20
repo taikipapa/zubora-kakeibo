@@ -21,21 +21,21 @@ export function TransactionListItem({ transaction, onDelete }: Props) {
   const { theme } = useTheme();
   const isIncome = transaction.type === 'income';
   const accentColor = isIncome ? theme.incomeColor : theme.expenseColor;
+  const typeLabel = isIncome ? '入れた' : '出した';
+  const amountLabel = `${isIncome ? '+' : '-'}¥${transaction.amount.toLocaleString()}`;
+
   return (
     <View style={styles.row}>
+      {/* Left: type label + date */}
       <View style={styles.left}>
-        <Text style={styles.walletName}>{transaction.walletName}</Text>
+        <Text style={[styles.typeLabel, { color: accentColor }]}>{typeLabel}</Text>
         <Text style={styles.date}>{formatDate(transaction.createdAt)}</Text>
       </View>
-      <View style={styles.right}>
-        <Text style={[styles.typeLabel, { color: accentColor }]}>
-          {isIncome ? '入った' : '出た'}
-        </Text>
-        <Text style={[styles.amount, { color: accentColor }]}>
-          {isIncome ? '+' : '-'}
-          {transaction.amount.toLocaleString()}円
-        </Text>
-      </View>
+
+      {/* Right: amount */}
+      <Text style={[styles.amount, { color: accentColor }]}>{amountLabel}</Text>
+
+      {/* Cancel button */}
       {onDelete && (
         <Pressable style={styles.deleteButton} onPress={onDelete} hitSlop={8}>
           <Text style={styles.deleteText}>取消</Text>
@@ -49,47 +49,26 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   left: {
     flex: 1,
-    gap: 2,
+    gap: 3,
   },
-  walletName: {
+  typeLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#3E2700',
+    fontWeight: '700',
   },
   date: {
     fontSize: 11,
-    color: '#A07800',
-  },
-  right: {
-    alignItems: 'flex-end',
-    gap: 2,
-    marginRight: 12,
-  },
-  typeLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  incomeLabel: {
-    color: '#43A047',
-  },
-  expenseLabel: {
-    color: '#E53935',
+    color: 'rgba(93,58,0,0.45)',
   },
   amount: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  incomeAmount: {
-    color: '#2E7D32',
-  },
-  expenseAmount: {
-    color: '#C62828',
+    fontSize: 18,
+    fontWeight: '900',
+    marginRight: 12,
   },
   deleteButton: {
     paddingHorizontal: 10,
