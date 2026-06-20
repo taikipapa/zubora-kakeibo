@@ -49,10 +49,14 @@ export default function HomeScreen() {
   const [showHistorySheet, setShowHistorySheet] = useState(false);
   const [displayMood, setDisplayMood] = useState<WalletMood>('normal');
   const moodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interstitialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moneyAnimRef = useRef<MoneyAnimationHandle>(null);
 
   useEffect(() => {
-    return () => { if (moodTimerRef.current) clearTimeout(moodTimerRef.current); };
+    return () => {
+      if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
+      if (interstitialTimerRef.current) clearTimeout(interstitialTimerRef.current);
+    };
   }, []);
 
   const loadData = useCallback(async () => {
@@ -122,7 +126,8 @@ export default function HomeScreen() {
       setAmount(0);
       setTransactionType(null);
       moodTimerRef.current = setTimeout(() => setDisplayMood('normal'), MOOD_RESET_DELAY_MS);
-      maybeShowInterstitial(); // show interstitial ad on every Nth save, if loaded and interval elapsed
+      // Delay interstitial so balance/animation are visible on screen before the ad appears
+      interstitialTimerRef.current = setTimeout(() => maybeShowInterstitial(), 700);
     } catch (err) {
       setDisplayMood('normal');
       setErrorMessage(err instanceof Error ? err.message : '保存に失敗しました');
