@@ -44,6 +44,13 @@
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "329767af-61a4-4b25-b9be-88445fab9fee"
+      }
+    },
+    "owner": "daitaina"
   }
 }
