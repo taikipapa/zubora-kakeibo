@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -25,6 +25,12 @@ export function AddWalletModal({ visible, onCreated }: Props) {
   const [name, setName] = useState('');
   const [design, setDesign] = useState<WalletDesign>(DEFAULT_WALLET_DESIGN);
   const [saving, setSaving] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (focusTimerRef.current) clearTimeout(focusTimerRef.current); };
+  }, []);
 
   async function handleSave() {
     if (!name.trim()) {
@@ -50,6 +56,11 @@ export function AddWalletModal({ visible, onCreated }: Props) {
       transparent
       animationType="fade"
       onRequestClose={() => {}}
+      onShow={() => {
+        // autoFocus は iOS では正常動作するが Android では Modal アニメーション中にフォーカスが破棄される。
+        // onShow はアニメーション完了後に発火するため、遅延 focus で Android の問題を回避する。
+        focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 50);
+      }}
     >
       {/* No onPress on overlay — tapping outside does nothing */}
       <View style={styles.overlay}>
@@ -59,6 +70,7 @@ export function AddWalletModal({ visible, onCreated }: Props) {
           {/* 名前入力 */}
           <Text style={styles.label}>財布名</Text>
           <TextInput
+            ref={inputRef}
             style={styles.input}
             value={name}
             onChangeText={setName}

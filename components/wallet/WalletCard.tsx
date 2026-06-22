@@ -6,6 +6,9 @@ import type { ThemeId } from '../../types/settings';
 import type { WalletType } from '../../types/wallet';
 import { getWalletImage, type WalletMood } from '../../utils/walletImages';
 
+// Preload all moods to warm Android's bitmap decode cache before first mood change
+const ALL_MOODS: WalletMood[] = ['normal', 'happy', 'sad'];
+
 interface Props {
   balance: number;
   type: WalletType;
@@ -28,6 +31,12 @@ export function WalletCard({ balance, type, mood = 'normal', themeId: propThemeI
 
   return (
     <View style={styles.container}>
+      {ALL_MOODS.map(m => {
+        const preloadSrc = getWalletImage(effectiveThemeId, type, m);
+        return preloadSrc ? (
+          <Image key={m} source={preloadSrc} style={styles.preload} fadeDuration={0} />
+        ) : null;
+      })}
       {image ? (
         <Image source={image} style={styles.illustration} resizeMode="contain" fadeDuration={0} />
       ) : (
@@ -44,6 +53,12 @@ export function WalletCard({ balance, type, mood = 'normal', themeId: propThemeI
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+  },
+  preload: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
   },
   illustration: {
     width: 220,
