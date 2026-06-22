@@ -68,11 +68,22 @@ export default function HomeScreen() {
     useCallback(() => {
       let cancelled = false;
       initDatabase()
-        .then(() => { if (!cancelled) return loadData(); })
+        .then(async () => {
+          if (cancelled) return;
+          const updated = await getAllWallets();
+          if (cancelled) return;
+          setWallets(updated);
+          // After a data reset wallets shrinks, but currentIndex may still point past the end.
+          // Clamp to 0 so wallet is never null when wallets is non-empty.
+          if (updated.length > 0 && currentIndexRef.current >= updated.length) {
+            setCurrentIndex(0);
+            currentIndexRef.current = 0;
+          }
+        })
         .catch((err) => console.error('Failed to load data', err))
         .finally(() => { if (!cancelled) setLoading(false); });
       return () => { cancelled = true; };
-    }, [loadData]),
+    }, []),
   );
 
   function navigate(newIndex: number) {
