@@ -29,7 +29,7 @@ export function WalletCard({ balance, type, mood = 'normal', themeId: propThemeI
   return (
     <View style={styles.container}>
       {image ? (
-        <Image source={image} style={styles.illustration} resizeMode="contain" />
+        <Image source={image} style={styles.illustration} resizeMode="contain" fadeDuration={0} />
       ) : (
         <Text style={styles.illustrationEmoji}>{WALLET_EMOJI[type] ?? '👛'}</Text>
       )}
