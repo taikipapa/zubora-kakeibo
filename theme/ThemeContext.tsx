@@ -25,8 +25,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
-        if (stored === 'waiwai' || stored === 'hokkori') {
-          setThemeIdState(stored);
+        if (stored && stored in themes) {
+          setThemeIdState(stored as ThemeId);
         }
       })
       .catch(() => {});
