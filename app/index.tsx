@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NumPad } from '../components/transaction/NumPad';
 import { TransactionTypeToggle } from '../components/transaction/TransactionTypeToggle';
-import { HomeBannerAd } from '../components/common/HomeBannerAd';
 import { WalletHistorySheet } from '../components/history/WalletHistorySheet';
 import { MoneyAnimation, type MoneyAnimationHandle } from '../components/wallet/MoneyAnimation';
 import { AddWalletModal } from '../components/wallet/AddWalletModal';
@@ -320,8 +319,6 @@ export default function HomeScreen() {
 
         {/* Custom numpad */}
         <NumPad onPress={handleNumPadKey} />
-
-        <HomeBannerAd />
       </View>
     </SafeAreaView>
   );

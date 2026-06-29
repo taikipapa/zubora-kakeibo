@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.6)',
     borderRadius: 16,
     paddingHorizontal: 12,
+    paddingBottom: 16,
   },
   emptyText: {
     fontSize: 15,

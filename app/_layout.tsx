@@ -1,7 +1,9 @@
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 import mobileAds from 'react-native-google-mobile-ads';
 
+import { HomeBannerAd } from '../components/common/HomeBannerAd';
 import { initDatabase } from '../db/client';
 import { ThemeProvider } from '../theme/ThemeContext';
 
@@ -17,7 +19,21 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <Stack />
+      <View style={styles.root}>
+        <View style={styles.stack}>
+          <Stack />
+        </View>
+        <HomeBannerAd />
+      </View>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  stack: {
+    flex: 1,
+  },
+});

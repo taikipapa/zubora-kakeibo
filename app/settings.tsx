@@ -107,7 +107,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
   content: {
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
     paddingHorizontal: 16,
   },
   sectionTitle: {
